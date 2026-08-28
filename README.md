@@ -15,8 +15,8 @@ quer ser contatado por um parceiro comercial.
 | 1 — Cadastro rápido | pronta |
 | 2 — Perfil da atividade | pronta |
 | 3 — Consumo energético | pronta |
-| 4 — Motor de diagnóstico | especificado em `docs/motor-diagnostico.md` |
-| 5 — Relatório final | a fazer |
+| 4 — Motor de diagnóstico | pronto, **com constantes a calibrar** |
+| 5 — Relatório final | pronta |
 | Política de privacidade e canal de exclusão | prontas |
 
 ## Rodando localmente
@@ -35,6 +35,7 @@ supabase/migrations/0002_rls_e_retencao.sql
 supabase/migrations/0003_registrar_cadastro.sql
 supabase/migrations/0004_salvar_perfil.sql
 supabase/migrations/0005_salvar_consumo.sql
+supabase/migrations/0006_diagnostico_e_interesse.sql
 ```
 
 `supabase/seed.sql` tem dados fictícios para desenvolvimento. Nunca rode em
@@ -43,7 +44,7 @@ produção.
 ## Verificação
 
 ```bash
-npm run test       # testes unitários (telefone, sessão, e as 3 telas)
+npm run test       # testes unitários (motor, telefone, sessão, as 3 telas)
 npm run typecheck
 npm run build
 ```
@@ -53,9 +54,20 @@ npm run build
 - [ ] Preencher `[DEFINIR]` na política de privacidade: nome do controlador e
       do parceiro integrador
 - [ ] Definir o `WHATSAPP_CONTATO` de atendimento de dados pessoais
-- [ ] Calibrar as constantes do motor com faturas reais e preço do parceiro
+- [ ] **Calibrar as constantes do motor** — hoje o retorno dá 20–25 anos.
+      Ver o achado em `docs/motor-diagnostico.md`
 - [ ] Configurar as variáveis de ambiente na Vercel
 - [ ] Agendar o cron diário de expurgo
+
+## ⚠️ Antes de mostrar isto a um produtor
+
+O motor roda com constantes estimadas, não medidas. Com elas, o retorno do
+investimento em bateria dá **entre 20 e 25 anos** nos melhores cenários — e o
+relatório, corretamente, sugere revisar a tarifa antes de comprar. Isso pode
+significar que as constantes estão pessimistas, que falta modelar a redução de
+demanda contratada do Grupo A, ou que bateria sozinha não se paga mesmo. A
+conta e as três leituras estão em
+[`docs/motor-diagnostico.md`](docs/motor-diagnostico.md#-achado-de-calibração-o-retorno-não-fecha-com-os-números-de-hoje).
 
 ## Documentação
 

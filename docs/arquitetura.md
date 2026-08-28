@@ -57,7 +57,8 @@ servidor. Consequências:
 │   │   ├── 0002_rls_e_retencao.sql      ✓ RLS deny-all, revokes, expurgo
 │   │   ├── 0003_registrar_cadastro.sql  ✓ tela 1 em uma transação
 │   │   ├── 0004_salvar_perfil.sql       ✓ tela 2, com upsert
-│   │   └── 0005_salvar_consumo.sql      ✓ tela 3, com upsert
+│   │   ├── 0005_salvar_consumo.sql      ✓ tela 3, com upsert
+│   │   └── 0006_diagnostico_e_interesse.sql ✓ telas 4 e 5 + view pública
 │   └── seed.sql                         ✓ dados de teste locais (fictícios)
 │
 ├── src/
@@ -67,15 +68,14 @@ servidor. Consequências:
 │   │   ├── page.tsx                 ✓  TELA 1 — cadastro rápido
 │   │   ├── perfil/page.tsx          ✓  TELA 2 — perfil da atividade
 │   │   ├── consumo/page.tsx         ✓  TELA 3 — consumo energético
-│   │   ├── relatorio/page.tsx       ~  hoje só confirma que salvou
-│   │   ├── relatorio/[token]/page.tsx  TELA 5 — relatório final
+│   │   ├── relatorio/[token]/page.tsx ✓ TELA 5 — relatório final
 │   │   ├── privacidade/page.tsx     ✓  política de privacidade
 │   │   ├── meus-dados/page.tsx      ✓  como pedir exclusão/correção
 │   │   └── api/
 │   │       ├── cadastro/route.ts    ✓  POST tela 1
 │   │       ├── perfil/route.ts      ✓  POST tela 2
-│   │       ├── consumo/route.ts     ✓  POST tela 3 (motor entra aqui)
-│   │       ├── interesse/route.ts      POST botão "quero saber mais"
+│   │       ├── consumo/route.ts     ✓  POST tela 3 + roda o motor
+│   │       ├── interesse/route.ts   ✓  POST botão "quero saber mais"
 │   │       └── cron/expurgo/route.ts   GET protegido por CRON_SECRET
 │   │
 │   ├── components/
@@ -83,7 +83,7 @@ servidor. Consequências:
 │   │   │                                 Grupo, Botao, Passos
 │   │   ├── formularios/             ✓  FormCadastro, FormPerfil, FormConsumo,
 │   │   │                                 useErros
-│   │   └── relatorio/                  CardEconomia, CardBess, BotaoWhatsApp
+│   │   └── relatorio/              ✓  CardEconomia, CardBateria, AcoesRelatorio
 │   │
 │   ├── lib/
 │   │   ├── config.ts                ✓  leitura de variáveis de ambiente
@@ -102,16 +102,17 @@ servidor. Consequências:
 │   │   ├── telefone.ts              ✓  máscara e normalização E.164
 │   │   ├── municipios.ts            ✓  sugestões da região
 │   │   ├── formatacao.ts            ✓  R$, capitalização
+│   │   ├── repositorio/diagnosticos.ts ✓ resultado e token público
 │   │   └── motor/
-│   │       ├── parametros.ts           TODAS as constantes calibráveis
-│   │       ├── calcular.ts             função pura: entradas → diagnóstico
-│   │       ├── mensagens.ts            texto do relatório, sem jargão
-│   │       └── tipos.ts
+│   │       ├── parametros.ts        ✓  TODAS as constantes calibráveis
+│   │       ├── calcular.ts          ✓  função pura: entradas → diagnóstico
+│   │       ├── mensagens.ts         ✓  texto do relatório, sem jargão
+│   │       └── tipos.ts             ✓
 │   │
 │   └── styles/globals.css           ✓
 │
-└── tests/                           ✓  telefone, sessao, cadastro, perfil,
-                                         consumo (+ motor)
+└── tests/                           ✓  motor, telefone, sessao, cadastro,
+                                         perfil, consumo
 ```
 
 Regra de ouro do motor: `calcular.ts` é **função pura**, sem I/O. Recebe as
@@ -178,9 +179,8 @@ mora no repositório (`src/app/privacidade/page.tsx`), então a versão mora jun
 
 ## 5. Próximos passos
 
-1. Motor de diagnóstico (tela 4) + tela 5 (relatório).
+1. **Calibrar as constantes do motor** — hoje o retorno dá 20–25 anos; ver o
+   achado no fim de `docs/motor-diagnostico.md`.
 2. Rota de expurgo com cron da Vercel.
-3. Calibrar as constantes de `docs/motor-diagnostico.md` com 3–5 faturas reais
-   da região e a tabela de preço do parceiro — hoje são estimativas.
-4. Preencher o nome do controlador e do parceiro na política de privacidade
+3. Preencher o nome do controlador e do parceiro na política de privacidade
    (estão marcados com `[DEFINIR]`) antes de qualquer divulgação.

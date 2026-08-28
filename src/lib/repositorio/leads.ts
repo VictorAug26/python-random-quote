@@ -21,6 +21,22 @@ export type EntradaCadastro = {
   userAgent: string | null;
 };
 
+/** Estado atual de uma autorização, pela view consentimentos_atuais. */
+export async function consentimentoAtivo(
+  leadId: string,
+  finalidade: 'diagnostico' | 'compartilhamento_parceiro',
+): Promise<boolean> {
+  const { data, error } = await supabaseServidor()
+    .from('consentimentos_atuais')
+    .select('concedido')
+    .eq('lead_id', leadId)
+    .eq('finalidade', finalidade)
+    .maybeSingle();
+
+  if (error) throw new Error(`Falha ao ler o consentimento: ${error.message}`);
+  return Boolean(data?.concedido);
+}
+
 export async function registrarCadastro(entrada: EntradaCadastro): Promise<string> {
   const { data, error } = await supabaseServidor().rpc('registrar_cadastro', {
     p_nome: entrada.nome,
