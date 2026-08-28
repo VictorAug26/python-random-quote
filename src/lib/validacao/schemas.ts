@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { normalizarWhatsapp } from '@/lib/telefone';
+import { VALORES_ATIVIDADE, VALORES_EQUIPAMENTO, VALORES_INSTALACAO } from '@/lib/dominio';
 
 /**
  * Schemas de entrada. O mesmo arquivo valida no navegador (mensagem na hora)
@@ -47,6 +48,29 @@ export const esquemaCadastro = z.object({
 });
 
 export type DadosCadastro = z.infer<typeof esquemaCadastro>;
+
+/** Remove repetição — o cliente pode mandar o mesmo valor duas vezes. */
+const semRepetidos = <T,>(lista: T[]): T[] => [...new Set(lista)];
+
+export const esquemaPerfil = z.object({
+  atividades: z
+    .array(z.enum(VALORES_ATIVIDADE), { error: 'Escolha o que a fazenda produz.' })
+    .transform(semRepetidos)
+    .refine((lista) => lista.length >= 1, {
+      error: 'Escolha pelo menos uma atividade.',
+    }),
+
+  atividadeOutro: z.string().trim().max(120, { error: 'Resposta longa demais.' }).optional(),
+
+  // Pode vir vazio: nem toda propriedade tem um desses equipamentos.
+  equipamentos: z.array(z.enum(VALORES_EQUIPAMENTO)).transform(semRepetidos).default([]),
+
+  instalacao: z.enum(VALORES_INSTALACAO, {
+    error: 'Diga se já tem energia solar ou baterias.',
+  }),
+});
+
+export type DadosPerfil = z.infer<typeof esquemaPerfil>;
 
 /** Converte os erros do Zod em { campo: mensagem } para a tela exibir. */
 export function errosPorCampo(erro: z.ZodError): Record<string, string> {

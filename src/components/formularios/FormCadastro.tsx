@@ -10,6 +10,7 @@ import { mascararTelefone } from '@/lib/telefone';
 import { MUNICIPIOS_REGIAO } from '@/lib/municipios';
 import { TEXTO_CONSENTIMENTO } from '@/lib/consentimento';
 import { esquemaCadastro, errosPorCampo } from '@/lib/validacao/schemas';
+import { useErros } from '@/components/formularios/useErros';
 
 export function FormCadastro({ origem }: { origem?: string | undefined }) {
   const router = useRouter();
@@ -23,7 +24,7 @@ export function FormCadastro({ origem }: { origem?: string | undefined }) {
   const [consenteDiagnostico, setConsenteDiagnostico] = useState(false);
   const [consenteParceiro, setConsenteParceiro] = useState(false);
 
-  const [erros, setErros] = useState<Record<string, string>>({});
+  const { erros, setErros, limpar } = useErros();
   const [enviando, setEnviando] = useState(false);
 
   async function enviar(evento: FormEvent<HTMLFormElement>) {
@@ -91,7 +92,10 @@ export function FormCadastro({ origem }: { origem?: string | undefined }) {
         enterKeyHint="next"
         placeholder="João da Silva"
         value={nome}
-        onChange={(e) => setNome(e.target.value)}
+        onChange={(e) => {
+          setNome(e.target.value);
+          limpar('nome');
+        }}
         erro={erros.nome}
       />
 
@@ -105,7 +109,10 @@ export function FormCadastro({ origem }: { origem?: string | undefined }) {
         enterKeyHint="next"
         placeholder="(34) 99123-4567"
         value={whatsapp}
-        onChange={(e) => setWhatsapp(mascararTelefone(e.target.value))}
+        onChange={(e) => {
+          setWhatsapp(mascararTelefone(e.target.value));
+          limpar('whatsapp');
+        }}
         erro={erros.whatsapp}
       />
 
@@ -115,7 +122,10 @@ export function FormCadastro({ origem }: { origem?: string | undefined }) {
         enterKeyHint="next"
         placeholder="Fazenda Boa Vista"
         value={nomePropriedade}
-        onChange={(e) => setNomePropriedade(e.target.value)}
+        onChange={(e) => {
+          setNomePropriedade(e.target.value);
+          limpar('nomePropriedade');
+        }}
         erro={erros.nomePropriedade}
       />
 
@@ -127,7 +137,10 @@ export function FormCadastro({ origem }: { origem?: string | undefined }) {
         enterKeyHint="done"
         placeholder="Patrocínio"
         value={municipio}
-        onChange={(e) => setMunicipio(e.target.value)}
+        onChange={(e) => {
+          setMunicipio(e.target.value);
+          limpar('municipio');
+        }}
         erro={erros.municipio}
       />
       <datalist id="municipios">
@@ -144,7 +157,10 @@ export function FormCadastro({ origem }: { origem?: string | undefined }) {
         <CaixaConsentimento
           id="consenteDiagnostico"
           marcado={consenteDiagnostico}
-          aoMudar={setConsenteDiagnostico}
+          aoMudar={(marcado) => {
+            setConsenteDiagnostico(marcado);
+            limpar('consenteDiagnostico');
+          }}
           erro={erros.consenteDiagnostico}
         >
           {TEXTO_CONSENTIMENTO.diagnostico}

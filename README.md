@@ -13,7 +13,7 @@ quer ser contatado por um parceiro comercial.
 | Tela | Situação |
 | --- | --- |
 | 1 — Cadastro rápido | pronta |
-| 2 — Perfil da atividade | a fazer |
+| 2 — Perfil da atividade | pronta |
 | 3 — Consumo energético | a fazer |
 | 4 — Motor de diagnóstico | especificado em `docs/motor-diagnostico.md` |
 | 5 — Relatório final | a fazer |
@@ -33,6 +33,7 @@ Aplique as migrations no seu projeto Supabase, em ordem:
 supabase/migrations/0001_schema_inicial.sql
 supabase/migrations/0002_rls_e_retencao.sql
 supabase/migrations/0003_registrar_cadastro.sql
+supabase/migrations/0004_salvar_perfil.sql
 ```
 
 `supabase/seed.sql` tem dados fictícios para desenvolvimento. Nunca rode em
@@ -41,7 +42,7 @@ produção.
 ## Verificação
 
 ```bash
-npm run test       # testes unitários (telefone, validação, sessão)
+npm run test       # testes unitários (telefone, validação, sessão, perfil)
 npm run typecheck
 npm run build
 ```

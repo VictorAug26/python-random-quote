@@ -55,7 +55,8 @@ servidor. Consequências:
 │   ├── migrations/
 │   │   ├── 0001_schema_inicial.sql      ✓ tabelas, checks, triggers
 │   │   ├── 0002_rls_e_retencao.sql      ✓ RLS deny-all, revokes, expurgo
-│   │   └── 0003_registrar_cadastro.sql  ✓ tela 1 em uma transação
+│   │   ├── 0003_registrar_cadastro.sql  ✓ tela 1 em uma transação
+│   │   └── 0004_salvar_perfil.sql       ✓ tela 2, com upsert
 │   └── seed.sql                         ✓ dados de teste locais (fictícios)
 │
 ├── src/
@@ -63,27 +64,31 @@ servidor. Consequências:
 │   │   ├── layout.tsx               ✓  shell mobile-first
 │   │   ├── icon.svg                 ✓
 │   │   ├── page.tsx                 ✓  TELA 1 — cadastro rápido
-│   │   ├── perfil/page.tsx          ~  TELA 2 — hoje só confirma a sessão
-│   │   ├── consumo/page.tsx            TELA 3 — consumo energético
+│   │   ├── perfil/page.tsx          ✓  TELA 2 — perfil da atividade
+│   │   ├── consumo/page.tsx         ~  TELA 3 — hoje só confirma a sessão
 │   │   ├── relatorio/[token]/page.tsx  TELA 5 — relatório final
 │   │   ├── privacidade/page.tsx     ✓  política de privacidade
 │   │   ├── meus-dados/page.tsx      ✓  como pedir exclusão/correção
 │   │   └── api/
 │   │       ├── cadastro/route.ts    ✓  POST tela 1
-│   │       ├── perfil/route.ts         POST tela 2
+│   │       ├── perfil/route.ts      ✓  POST tela 2
 │   │       ├── consumo/route.ts        POST tela 3 → dispara TELA 4 (motor)
 │   │       ├── interesse/route.ts      POST botão "quero saber mais"
 │   │       └── cron/expurgo/route.ts   GET protegido por CRON_SECRET
 │   │
 │   ├── components/
-│   │   ├── ui/                      ✓  Campo, CaixaConsentimento, Botao, Passos
-│   │   ├── formularios/             ✓  FormCadastro (+ FormPerfil, FormConsumo)
+│   │   ├── ui/                      ✓  Campo, CaixaConsentimento, CaixaOpcao,
+│   │   │                                 Grupo, Botao, Passos
+│   │   ├── formularios/             ✓  FormCadastro, FormPerfil, useErros
+│   │   │                                 (+ FormConsumo)
 │   │   └── relatorio/                  CardEconomia, CardBess, BotaoWhatsApp
 │   │
 │   ├── lib/
 │   │   ├── config.ts                ✓  leitura de variáveis de ambiente
 │   │   ├── supabase/servidor.ts     ✓  cliente service-role, marcado server-only
 │   │   ├── repositorio/leads.ts     ✓  acesso a dados do cadastro
+│   │   ├── repositorio/perfis.ts    ✓  acesso a dados do perfil
+│   │   ├── dominio.ts               ✓  atividades, equipamentos, instalações
 │   │   ├── validacao/schemas.ts     ✓  schemas Zod das 3 telas
 │   │   ├── sessao.ts                ✓  cookie httpOnly assinado
 │   │   ├── sessao-token.ts          ✓  assinatura do token (testável isolado)
@@ -100,7 +105,8 @@ servidor. Consequências:
 │   │
 │   └── styles/globals.css           ✓
 │
-└── tests/                           ✓  telefone, cadastro, sessao (+ motor)
+└── tests/                           ✓  telefone, cadastro, sessao, perfil
+                                         (+ motor)
 ```
 
 Regra de ouro do motor: `calcular.ts` é **função pura**, sem I/O. Recebe as
