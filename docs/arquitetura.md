@@ -39,65 +39,68 @@ servidor. Consequências:
 
 ## 2. Estrutura de pastas
 
+`✓` = já construído. O resto é o desenho combinado, tela por tela.
+
 ```
 .
-├── README.md
-├── .env.example                     # nomes das variáveis, nunca valores
-├── .gitignore
-├── next.config.mjs
-├── package.json
-├── tailwind.config.ts
-├── tsconfig.json
+├── README.md                     ✓
+├── .env.example                  ✓  nomes das variáveis, nunca valores
+├── next.config.mjs               ✓  cabeçalhos de segurança e CSP
+├── package.json / tsconfig.json  ✓
+├── postcss.config.mjs            ✓  Tailwind 4 (configuração mora no CSS)
 │
-├── docs/
-│   ├── arquitetura.md               # este arquivo
-│   ├── lgpd.md                      # mapa de dados, bases legais, retenção
-│   └── motor-diagnostico.md         # regras e constantes do motor v1
+├── docs/                         ✓  arquitetura, lgpd, motor-diagnostico
 │
 ├── supabase/
 │   ├── migrations/
-│   │   ├── 0001_schema_inicial.sql  # tabelas, checks, triggers
-│   │   └── 0002_rls_e_retencao.sql  # RLS deny-all, revokes, expurgo
-│   └── seed.sql                     # dados de teste locais (fictícios)
+│   │   ├── 0001_schema_inicial.sql      ✓ tabelas, checks, triggers
+│   │   ├── 0002_rls_e_retencao.sql      ✓ RLS deny-all, revokes, expurgo
+│   │   └── 0003_registrar_cadastro.sql  ✓ tela 1 em uma transação
+│   └── seed.sql                         ✓ dados de teste locais (fictícios)
 │
 ├── src/
 │   ├── app/
-│   │   ├── layout.tsx               # shell mobile-first + indicador de passo
-│   │   ├── page.tsx                 # TELA 1 — cadastro rápido
-│   │   ├── perfil/page.tsx          # TELA 2 — perfil da atividade
-│   │   ├── consumo/page.tsx         # TELA 3 — consumo energético
-│   │   ├── relatorio/[token]/page.tsx  # TELA 5 — relatório final
-│   │   ├── privacidade/page.tsx     # política de privacidade
-│   │   ├── meus-dados/page.tsx      # como pedir exclusão/correção
+│   │   ├── layout.tsx               ✓  shell mobile-first
+│   │   ├── icon.svg                 ✓
+│   │   ├── page.tsx                 ✓  TELA 1 — cadastro rápido
+│   │   ├── perfil/page.tsx          ~  TELA 2 — hoje só confirma a sessão
+│   │   ├── consumo/page.tsx            TELA 3 — consumo energético
+│   │   ├── relatorio/[token]/page.tsx  TELA 5 — relatório final
+│   │   ├── privacidade/page.tsx     ✓  política de privacidade
+│   │   ├── meus-dados/page.tsx      ✓  como pedir exclusão/correção
 │   │   └── api/
-│   │       ├── cadastro/route.ts    # POST tela 1 → cria lead + consentimentos
-│   │       ├── perfil/route.ts      # POST tela 2
-│   │       ├── consumo/route.ts     # POST tela 3 → dispara TELA 4 (motor)
-│   │       ├── interesse/route.ts   # POST botão "quero saber mais"
-│   │       └── cron/expurgo/route.ts# GET protegido por CRON_SECRET
+│   │       ├── cadastro/route.ts    ✓  POST tela 1
+│   │       ├── perfil/route.ts         POST tela 2
+│   │       ├── consumo/route.ts        POST tela 3 → dispara TELA 4 (motor)
+│   │       ├── interesse/route.ts      POST botão "quero saber mais"
+│   │       └── cron/expurgo/route.ts   GET protegido por CRON_SECRET
 │   │
 │   ├── components/
-│   │   ├── ui/                      # Campo, Checkbox, Botao, Passos, Moeda
-│   │   ├── formularios/             # FormCadastro, FormPerfil, FormConsumo
-│   │   └── relatorio/               # CardEconomia, CardBess, BotaoWhatsApp
+│   │   ├── ui/                      ✓  Campo, CaixaConsentimento, Botao, Passos
+│   │   ├── formularios/             ✓  FormCadastro (+ FormPerfil, FormConsumo)
+│   │   └── relatorio/                  CardEconomia, CardBess, BotaoWhatsApp
 │   │
 │   ├── lib/
-│   │   ├── supabase/servidor.ts     # cliente service-role, marcado server-only
-│   │   ├── validacao/schemas.ts     # schemas Zod das 3 telas
-│   │   ├── sessao.ts                # cookie httpOnly assinado com lead_id
-│   │   ├── consentimento.ts         # registro append-only + versão da política
-│   │   ├── privacidade.ts           # hash de IP com pepper, normalização
-│   │   ├── formatacao.ts            # R$, kWh, telefone BR
+│   │   ├── config.ts                ✓  leitura de variáveis de ambiente
+│   │   ├── supabase/servidor.ts     ✓  cliente service-role, marcado server-only
+│   │   ├── repositorio/leads.ts     ✓  acesso a dados do cadastro
+│   │   ├── validacao/schemas.ts     ✓  schemas Zod das 3 telas
+│   │   ├── sessao.ts                ✓  cookie httpOnly assinado
+│   │   ├── sessao-token.ts          ✓  assinatura do token (testável isolado)
+│   │   ├── consentimento.ts         ✓  textos exibidos + versão da política
+│   │   ├── privacidade.ts           ✓  hash de IP, IP e user agent da requisição
+│   │   ├── telefone.ts              ✓  máscara e normalização E.164
+│   │   ├── municipios.ts            ✓  sugestões da região
+│   │   ├── formatacao.ts            ✓  R$, capitalização
 │   │   └── motor/
-│   │       ├── parametros.ts        # TODAS as constantes calibráveis
-│   │       ├── calcular.ts          # função pura: entradas → diagnóstico
-│   │       ├── mensagens.ts         # texto do relatório, sem jargão
+│   │       ├── parametros.ts           TODAS as constantes calibráveis
+│   │       ├── calcular.ts             função pura: entradas → diagnóstico
+│   │       ├── mensagens.ts            texto do relatório, sem jargão
 │   │       └── tipos.ts
 │   │
-│   └── styles/globals.css
+│   └── styles/globals.css           ✓
 │
-└── tests/
-    └── motor.test.ts                # casos de referência do motor
+└── tests/                           ✓  telefone, cadastro, sessao (+ motor)
 ```
 
 Regra de ouro do motor: `calcular.ts` é **função pura**, sem I/O. Recebe as
@@ -149,7 +152,6 @@ vivem no painel da Vercel e no `.env.local` de cada dev (ignorado pelo git).
 | `SUPABASE_SERVICE_ROLE_KEY` | **só servidor**; nunca com prefixo `NEXT_PUBLIC_` |
 | `SESSAO_SECRET` | assina o cookie de sessão |
 | `IP_HASH_PEPPER` | tempera o hash de IP na prova de consentimento |
-| `POLITICA_VERSAO` | versão da política vigente, gravada em cada consentimento |
 | `WHATSAPP_CONTATO` | canal de exclusão/correção de dados |
 | `PARCEIRO_SLUG` | identifica o integrador que recebe os leads |
 | `CRON_SECRET` | protege a rota de expurgo |
@@ -157,11 +159,18 @@ vivem no painel da Vercel e no `.env.local` de cada dev (ignorado pelo git).
 
 ---
 
-## 5. Próximos passos sugeridos
+A versão da política de privacidade **não** é variável de ambiente: o texto
+mora no repositório (`src/app/privacidade/page.tsx`), então a versão mora junto
+(`src/lib/consentimento.ts`). Uma coisa só para manter em dia.
 
-1. Revisar este documento e o schema (`supabase/migrations/`).
-2. Calibrar as constantes de `docs/motor-diagnostico.md` com 3–5 faturas reais
+---
+
+## 5. Próximos passos
+
+1. Tela 2 (perfil da atividade) e tela 3 (consumo).
+2. Motor de diagnóstico + tela 5 (relatório).
+3. Rota de expurgo com cron da Vercel.
+4. Calibrar as constantes de `docs/motor-diagnostico.md` com 3–5 faturas reais
    da região e a tabela de preço do parceiro — hoje são estimativas.
-3. Escrever a política de privacidade com o nome do controlador (pessoa/empresa
-   que responde pelos dados) e o WhatsApp de atendimento.
-4. Aí sim, tela por tela: 1 → 2 → 3 → motor → 5.
+5. Preencher o nome do controlador e do parceiro na política de privacidade
+   (estão marcados com `[DEFINIR]`) antes de qualquer divulgação.
