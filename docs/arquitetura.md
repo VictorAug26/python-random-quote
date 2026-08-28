@@ -56,7 +56,8 @@ servidor. Consequências:
 │   │   ├── 0001_schema_inicial.sql      ✓ tabelas, checks, triggers
 │   │   ├── 0002_rls_e_retencao.sql      ✓ RLS deny-all, revokes, expurgo
 │   │   ├── 0003_registrar_cadastro.sql  ✓ tela 1 em uma transação
-│   │   └── 0004_salvar_perfil.sql       ✓ tela 2, com upsert
+│   │   ├── 0004_salvar_perfil.sql       ✓ tela 2, com upsert
+│   │   └── 0005_salvar_consumo.sql      ✓ tela 3, com upsert
 │   └── seed.sql                         ✓ dados de teste locais (fictícios)
 │
 ├── src/
@@ -65,22 +66,23 @@ servidor. Consequências:
 │   │   ├── icon.svg                 ✓
 │   │   ├── page.tsx                 ✓  TELA 1 — cadastro rápido
 │   │   ├── perfil/page.tsx          ✓  TELA 2 — perfil da atividade
-│   │   ├── consumo/page.tsx         ~  TELA 3 — hoje só confirma a sessão
+│   │   ├── consumo/page.tsx         ✓  TELA 3 — consumo energético
+│   │   ├── relatorio/page.tsx       ~  hoje só confirma que salvou
 │   │   ├── relatorio/[token]/page.tsx  TELA 5 — relatório final
 │   │   ├── privacidade/page.tsx     ✓  política de privacidade
 │   │   ├── meus-dados/page.tsx      ✓  como pedir exclusão/correção
 │   │   └── api/
 │   │       ├── cadastro/route.ts    ✓  POST tela 1
 │   │       ├── perfil/route.ts      ✓  POST tela 2
-│   │       ├── consumo/route.ts        POST tela 3 → dispara TELA 4 (motor)
+│   │       ├── consumo/route.ts     ✓  POST tela 3 (motor entra aqui)
 │   │       ├── interesse/route.ts      POST botão "quero saber mais"
 │   │       └── cron/expurgo/route.ts   GET protegido por CRON_SECRET
 │   │
 │   ├── components/
 │   │   ├── ui/                      ✓  Campo, CaixaConsentimento, CaixaOpcao,
 │   │   │                                 Grupo, Botao, Passos
-│   │   ├── formularios/             ✓  FormCadastro, FormPerfil, useErros
-│   │   │                                 (+ FormConsumo)
+│   │   ├── formularios/             ✓  FormCadastro, FormPerfil, FormConsumo,
+│   │   │                                 useErros
 │   │   └── relatorio/                  CardEconomia, CardBess, BotaoWhatsApp
 │   │
 │   ├── lib/
@@ -88,7 +90,10 @@ servidor. Consequências:
 │   │   ├── supabase/servidor.ts     ✓  cliente service-role, marcado server-only
 │   │   ├── repositorio/leads.ts     ✓  acesso a dados do cadastro
 │   │   ├── repositorio/perfis.ts    ✓  acesso a dados do perfil
-│   │   ├── dominio.ts               ✓  atividades, equipamentos, instalações
+│   │   ├── repositorio/consumos.ts  ✓  acesso a dados do consumo
+│   │   ├── numeros.ts               ✓  lê "8.400,00" digitado à mão
+│   │   ├── dominio.ts               ✓  atividades, equipamentos, instalações,
+│   │   │                                 classes tarifárias
 │   │   ├── validacao/schemas.ts     ✓  schemas Zod das 3 telas
 │   │   ├── sessao.ts                ✓  cookie httpOnly assinado
 │   │   ├── sessao-token.ts          ✓  assinatura do token (testável isolado)
@@ -105,8 +110,8 @@ servidor. Consequências:
 │   │
 │   └── styles/globals.css           ✓
 │
-└── tests/                           ✓  telefone, cadastro, sessao, perfil
-                                         (+ motor)
+└── tests/                           ✓  telefone, sessao, cadastro, perfil,
+                                         consumo (+ motor)
 ```
 
 Regra de ouro do motor: `calcular.ts` é **função pura**, sem I/O. Recebe as
@@ -173,10 +178,9 @@ mora no repositório (`src/app/privacidade/page.tsx`), então a versão mora jun
 
 ## 5. Próximos passos
 
-1. Tela 2 (perfil da atividade) e tela 3 (consumo).
-2. Motor de diagnóstico + tela 5 (relatório).
-3. Rota de expurgo com cron da Vercel.
-4. Calibrar as constantes de `docs/motor-diagnostico.md` com 3–5 faturas reais
+1. Motor de diagnóstico (tela 4) + tela 5 (relatório).
+2. Rota de expurgo com cron da Vercel.
+3. Calibrar as constantes de `docs/motor-diagnostico.md` com 3–5 faturas reais
    da região e a tabela de preço do parceiro — hoje são estimativas.
-5. Preencher o nome do controlador e do parceiro na política de privacidade
+4. Preencher o nome do controlador e do parceiro na política de privacidade
    (estão marcados com `[DEFINIR]`) antes de qualquer divulgação.

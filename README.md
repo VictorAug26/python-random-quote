@@ -14,7 +14,7 @@ quer ser contatado por um parceiro comercial.
 | --- | --- |
 | 1 — Cadastro rápido | pronta |
 | 2 — Perfil da atividade | pronta |
-| 3 — Consumo energético | a fazer |
+| 3 — Consumo energético | pronta |
 | 4 — Motor de diagnóstico | especificado em `docs/motor-diagnostico.md` |
 | 5 — Relatório final | a fazer |
 | Política de privacidade e canal de exclusão | prontas |
@@ -34,6 +34,7 @@ supabase/migrations/0001_schema_inicial.sql
 supabase/migrations/0002_rls_e_retencao.sql
 supabase/migrations/0003_registrar_cadastro.sql
 supabase/migrations/0004_salvar_perfil.sql
+supabase/migrations/0005_salvar_consumo.sql
 ```
 
 `supabase/seed.sql` tem dados fictícios para desenvolvimento. Nunca rode em
@@ -42,7 +43,7 @@ produção.
 ## Verificação
 
 ```bash
-npm run test       # testes unitários (telefone, validação, sessão, perfil)
+npm run test       # testes unitários (telefone, sessão, e as 3 telas)
 npm run typecheck
 npm run build
 ```

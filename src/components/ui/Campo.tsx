@@ -5,10 +5,12 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> & {
   rotulo: string;
   ajuda?: ReactNode;
   erro?: string | undefined;
+  /** Marca fixa dentro do campo, como "R$" ou "kWh". */
+  prefixo?: string;
 };
 
 /** Campo de texto: rótulo grande, alvo de toque alto, erro logo abaixo. */
-export function Campo({ id, rotulo, ajuda, erro, className, ...resto }: Props) {
+export function Campo({ id, rotulo, ajuda, erro, prefixo, className, ...resto }: Props) {
   const idAjuda = ajuda ? `${id}-ajuda` : undefined;
   const idErro = erro ? `${id}-erro` : undefined;
   const descrito = [idAjuda, idErro].filter(Boolean).join(' ');
@@ -25,18 +27,30 @@ export function Campo({ id, rotulo, ajuda, erro, className, ...resto }: Props) {
         </p>
       ) : null}
 
-      <input
-        id={id}
-        aria-invalid={erro ? true : undefined}
-        aria-describedby={descrito || undefined}
-        className={[
-          'mt-2 w-full rounded-xl border bg-white px-4 py-3.5 text-stone-900',
-          'placeholder:text-stone-400',
-          erro ? 'border-red-600' : 'border-stone-300',
-          className ?? '',
-        ].join(' ')}
-        {...resto}
-      />
+      <div className="relative mt-2">
+        {prefixo ? (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-stone-500"
+          >
+            {prefixo}
+          </span>
+        ) : null}
+
+        <input
+          id={id}
+          aria-invalid={erro ? true : undefined}
+          aria-describedby={descrito || undefined}
+          className={[
+            'w-full rounded-xl border bg-white py-3.5 pr-4 text-stone-900',
+            prefixo ? 'pl-12' : 'pl-4',
+            'placeholder:text-stone-400',
+            erro ? 'border-red-600' : 'border-stone-300',
+            className ?? '',
+          ].join(' ')}
+          {...resto}
+        />
+      </div>
 
       {erro ? (
         <p id={idErro} role="alert" className="mt-1.5 text-sm font-medium text-red-700">

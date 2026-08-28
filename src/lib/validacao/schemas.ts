@@ -1,6 +1,12 @@
 import { z } from 'zod';
 import { normalizarWhatsapp } from '@/lib/telefone';
-import { VALORES_ATIVIDADE, VALORES_EQUIPAMENTO, VALORES_INSTALACAO } from '@/lib/dominio';
+import {
+  VALORES_ATIVIDADE,
+  VALORES_CLASSE_TARIFARIA,
+  VALORES_EQUIPAMENTO,
+  VALORES_INSTALACAO,
+} from '@/lib/dominio';
+import { parsearNumeroBR } from '@/lib/numeros';
 
 /**
  * Schemas de entrada. O mesmo arquivo valida no navegador (mensagem na hora)
@@ -71,6 +77,51 @@ export const esquemaPerfil = z.object({
 });
 
 export type DadosPerfil = z.infer<typeof esquemaPerfil>;
+
+/**
+ * Número digitado como texto ("8.400,00") vira número de verdade aqui.
+ * Os tetos são os mesmos CHECK da migration 0001 — se um passar, o outro
+ * pega, mas é melhor o produtor ver a mensagem antes de chegar no banco.
+ */
+const numeroDigitado = (opcoes: {
+  faltando: string;
+  invalido: string;
+  maximo: number;
+  acimaDoMaximo: string;
+}) =>
+  z
+    .string({ error: opcoes.faltando })
+    .trim()
+    .min(1, { error: opcoes.faltando })
+    .transform((texto) => parsearNumeroBR(texto))
+    .refine((valor): valor is number => valor !== null && valor > 0, {
+      error: opcoes.invalido,
+    })
+    .refine((valor) => valor <= opcoes.maximo, { error: opcoes.acimaDoMaximo });
+
+export const esquemaConsumo = z.object({
+  valorFaturaReais: numeroDigitado({
+    faltando: 'Escreva o valor da última conta de luz.',
+    invalido: 'Valor inválido. Escreva só o número, como 8.400.',
+    maximo: 1000000,
+    acimaDoMaximo: 'Esse valor parece alto demais. Confira na fatura.',
+  }),
+
+  // Opcional de verdade: muita gente não tem a fatura em mãos na hora.
+  consumoKwh: z
+    .union([z.literal(''), z.string()])
+    .optional()
+    .transform((texto) => (texto && texto.trim() !== '' ? parsearNumeroBR(texto) : null))
+    .refine((valor) => valor === null || (valor > 0 && valor <= 5000000), {
+      error: 'Consumo inválido. Escreva só o número em kWh, como 8.900.',
+    }),
+
+  classeTarifaria: z.enum(VALORES_CLASSE_TARIFARIA, {
+    error: 'Escolha uma opção. Se não souber, marque "Não sei".',
+  }),
+});
+
+export type DadosConsumo = z.infer<typeof esquemaConsumo>;
 
 /** Converte os erros do Zod em { campo: mensagem } para a tela exibir. */
 export function errosPorCampo(erro: z.ZodError): Record<string, string> {

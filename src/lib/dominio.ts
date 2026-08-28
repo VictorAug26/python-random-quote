@@ -86,6 +86,43 @@ export function instalacaoParaBooleanos(valor: Instalacao): {
   };
 }
 
+/**
+ * Classe tarifária (tela 3).
+ *
+ * É a informação que mais muda o resultado: sem diferença de preço entre
+ * horários, quase não há o que a bateria capture. "Não sei" é uma resposta
+ * legítima e comum — o motor usa um valor conservador e avisa no relatório.
+ */
+export const VALORES_CLASSE_TARIFARIA = ['branca', 'convencional', 'grupo_a', 'nao_sei'] as const;
+export type ClasseTarifaria = (typeof VALORES_CLASSE_TARIFARIA)[number];
+
+export const CLASSES_TARIFARIAS: {
+  valor: ClasseTarifaria;
+  titulo: string;
+  descricao: string;
+}[] = [
+  {
+    valor: 'convencional',
+    titulo: 'Convencional',
+    descricao: 'O preço da energia é o mesmo a qualquer hora do dia',
+  },
+  {
+    valor: 'branca',
+    titulo: 'Tarifa branca',
+    descricao: 'A energia custa mais caro no fim da tarde e à noite',
+  },
+  {
+    valor: 'grupo_a',
+    titulo: 'Alta tensão (Grupo A)',
+    descricao: 'A conta cobra demanda contratada, em kW',
+  },
+  {
+    valor: 'nao_sei',
+    titulo: 'Não sei',
+    descricao: 'Sem problema — a gente estima e diz na hora o quanto isso pesa',
+  },
+];
+
 export function booleanosParaInstalacao(possuiSolar: boolean, possuiBess: boolean): Instalacao {
   if (possuiSolar && possuiBess) return 'solar_e_baterias';
   if (possuiSolar) return 'solar';
