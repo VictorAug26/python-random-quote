@@ -15,7 +15,7 @@ economia com BESS e decide se quer falar com um parceiro comercial.
 | Validação | **Zod** | Mesmo schema valida no cliente e no servidor. |
 | Backend | **Route Handlers do próprio Next.js** | Não precisa de serviço separado; o motor de diagnóstico roda aqui. |
 | Banco | **Supabase (Postgres)** com RLS ligada | Postgres de verdade, migrations em SQL versionado. |
-| Deploy | **Vercel** | HTTPS automático, preview por branch, cron nativo para o expurgo LGPD. |
+| Deploy | **Vercel** | HTTPS automático e preview por branch, sem configuração. |
 | Testes | **Vitest** (só no motor de regras) | O motor é a parte com risco real de erro; telas testamos na mão. |
 
 Alternativa considerada: HTML/JS puro. Descartada porque precisaríamos de um
@@ -58,7 +58,8 @@ servidor. Consequências:
 │   │   ├── 0003_registrar_cadastro.sql  ✓ tela 1 em uma transação
 │   │   ├── 0004_salvar_perfil.sql       ✓ tela 2, com upsert
 │   │   ├── 0005_salvar_consumo.sql      ✓ tela 3, com upsert
-│   │   └── 0006_diagnostico_e_interesse.sql ✓ telas 4 e 5 + view pública
+│   │   ├── 0006_diagnostico_e_interesse.sql ✓ telas 4 e 5 + view pública
+│   │   └── 0007_expurgo_agendado.sql    ✓ retenção automática (pg_cron)
 │   └── seed.sql                         ✓ dados de teste locais (fictícios)
 │
 ├── src/
@@ -75,8 +76,7 @@ servidor. Consequências:
 │   │       ├── cadastro/route.ts    ✓  POST tela 1
 │   │       ├── perfil/route.ts      ✓  POST tela 2
 │   │       ├── consumo/route.ts     ✓  POST tela 3 + roda o motor
-│   │       ├── interesse/route.ts   ✓  POST botão "quero saber mais"
-│   │       └── cron/expurgo/route.ts   GET protegido por CRON_SECRET
+│   │       └── interesse/route.ts   ✓  POST botão "quero saber mais"
 │   │
 │   ├── components/
 │   │   ├── ui/                      ✓  Campo, CaixaConsentimento, CaixaOpcao,
@@ -151,6 +151,15 @@ Os dados pessoais aparecem só na sessão do próprio produtor (via cookie).
 
 A mensagem pré-formatada de compartilhamento leva o resumo em texto + o link.
 
+### Retenção: por que o agendamento fica no banco
+
+O expurgo é agendado por **pg_cron, dentro do Supabase** (migration 0007), e
+não por uma rota HTTP chamada de fora. O trabalho é todo dentro do Postgres —
+apagar linhas vencidas —, então dar a volta pela internet só acrescentaria um
+endpoint público, um segredo para administrar e uma dependência de o app estar
+no ar. A visibilidade que um painel de cron daria vem da tabela
+`expurgos_lgpd`, que registra cada execução sem guardar dado pessoal.
+
 ---
 
 ## 4. Variáveis de ambiente
@@ -166,7 +175,6 @@ vivem no painel da Vercel e no `.env.local` de cada dev (ignorado pelo git).
 | `IP_HASH_PEPPER` | tempera o hash de IP na prova de consentimento |
 | `WHATSAPP_CONTATO` | canal de exclusão/correção de dados |
 | `PARCEIRO_SLUG` | identifica o integrador que recebe os leads |
-| `CRON_SECRET` | protege a rota de expurgo |
 | `NEXT_PUBLIC_SITE_URL` | monta o link do relatório no compartilhamento |
 
 ---
@@ -181,6 +189,5 @@ mora no repositório (`src/app/privacidade/page.tsx`), então a versão mora jun
 
 1. **Calibrar as constantes do motor** — hoje o retorno dá 20–25 anos; ver o
    achado no fim de `docs/motor-diagnostico.md`.
-2. Rota de expurgo com cron da Vercel.
-3. Preencher o nome do controlador e do parceiro na política de privacidade
+2. Preencher o nome do controlador e do parceiro na política de privacidade
    (estão marcados com `[DEFINIR]`) antes de qualquer divulgação.

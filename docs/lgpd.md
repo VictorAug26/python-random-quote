@@ -70,10 +70,19 @@ autorizou.
 | Registrou interesse comercial | 24 meses | a aplicação estende `expira_em` |
 | Revogou consentimento ou pediu exclusão | imediato | `expira_em = now()` |
 
-`public.lgpd_expurgar_expirados()` roda uma vez por dia (cron da Vercel
-chamando `/api/cron/expurgo`, protegido por `CRON_SECRET`) e apaga os leads
-vencidos. Como todas as tabelas filhas têm `on delete cascade`, some tudo:
+`public.lgpd_expurgar_expirados()` roda **todo dia às 4h (UTC)**, agendada por
+pg_cron dentro do próprio Supabase (migration 0007). Ela apaga os leads
+vencidos; como todas as tabelas filhas têm `on delete cascade`, some tudo:
 perfil, consumo, diagnósticos, consentimentos e interesse.
+
+Cada execução deixa uma linha em `expurgos_lgpd` — quantos leads saíram,
+quando e em quanto tempo. Nenhum dado pessoal no log, só a contagem. É a prova
+de que a retenção é cumprida, e o lugar de olhar se alguém perguntar.
+
+O agendamento fica no banco, e não numa rota HTTP chamada de fora, porque o
+trabalho é todo dentro do Postgres: uma rota só acrescentaria um endpoint
+público na internet, um segredo para administrar e uma dependência de o app
+estar no ar.
 
 ---
 
@@ -82,6 +91,21 @@ perfil, consumo, diagnósticos, consentimentos e interesse.
 Canal único e simples: o mesmo WhatsApp de contato, divulgado na política e na
 página `/meus-dados`. Pedidos são registrados em `solicitacoes_titular` com
 prazo padrão de **15 dias**, para nenhum se perder na conversa.
+
+Para **exclusão**, quem atende roda uma linha:
+
+```sql
+select public.lgpd_atender_pedido_exclusao('+5534991234567');
+```
+
+A função antecipa o expurgo daquele titular (`expira_em = now()`) e registra o
+atendimento. A execução seguinte apaga tudo em cascata — ninguém precisa sair
+apagando tabela por tabela e torcendo para não esquecer nenhuma.
+
+Depois que os dados somem, o próprio expurgo **apaga o telefone guardado no
+registro de atendimento**, mantendo só a prova de que o pedido existiu e foi
+cumprido. Não faria sentido honrar uma exclusão e continuar guardando o número
+de quem pediu.
 
 Atende a: confirmação de tratamento, acesso, correção, exclusão, revogação de
 consentimento e portabilidade.

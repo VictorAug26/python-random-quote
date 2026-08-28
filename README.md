@@ -36,6 +36,7 @@ supabase/migrations/0003_registrar_cadastro.sql
 supabase/migrations/0004_salvar_perfil.sql
 supabase/migrations/0005_salvar_consumo.sql
 supabase/migrations/0006_diagnostico_e_interesse.sql
+supabase/migrations/0007_expurgo_agendado.sql
 ```
 
 `supabase/seed.sql` tem dados fictícios para desenvolvimento. Nunca rode em
@@ -57,7 +58,9 @@ npm run build
 - [ ] **Calibrar as constantes do motor** — hoje o retorno dá 20–25 anos.
       Ver o achado em `docs/motor-diagnostico.md`
 - [ ] Configurar as variáveis de ambiente na Vercel
-- [ ] Agendar o cron diário de expurgo
+- [ ] Habilitar a extensão `pg_cron` no Supabase antes de rodar a migration
+      0007 — sem ela o expurgo não é agendado (a migration avisa em vez de
+      falhar)
 
 ## ⚠️ Antes de mostrar isto a um produtor
 
