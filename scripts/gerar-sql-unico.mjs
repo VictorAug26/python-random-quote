@@ -29,10 +29,16 @@ const partes = [
 -- GERADO AUTOMATICAMENTE por scripts/gerar-sql-unico.mjs. Não edite aqui:
 -- mexa nos arquivos de supabase/migrations/ e rode \`npm run sql\`.
 --
--- Como usar: cole tudo no SQL Editor do Supabase e rode UMA VEZ.
+-- ⚠️ ESTE ARQUIVO É PARA BANCO VAZIO. Rode UMA VEZ, na primeira instalação.
 --
--- Rodar duas vezes dá erro ("relation already exists"), e isso é esperado:
--- migrations são de execução única. Se precisar recomeçar do zero, rode antes:
+-- JÁ TEM O BANCO E QUER SÓ ATUALIZAR? Não rode este arquivo. Ele para na
+-- primeira tabela ("relation already exists") e NADA depois é executado — as
+-- migrations novas, que ficam no fim, nunca chegam a rodar. Rode apenas os
+-- arquivos de supabase/migrations/ que ainda faltam, um por um, em ordem.
+--
+-- Para saber quais faltam: \`npm run checar\` compara o seu banco com o código.
+--
+-- Se precisar recomeçar do zero, rode antes:
 --
 --   drop schema public cascade;
 --   create schema public;

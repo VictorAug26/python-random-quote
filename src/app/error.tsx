@@ -42,6 +42,17 @@ export default function Erro({
         Tentar de novo
       </button>
 
+      {/*
+        O digest é o mesmo código que o Next grava no log do servidor. Em
+        produção é a única ponte entre o que o usuário viu e a causa real —
+        sem ele, não há como cruzar uma reclamação com o log da Vercel.
+      */}
+      {!emDesenvolvimento && error.digest ? (
+        <p className="mt-6 font-mono text-xs text-stone-400">
+          Código do erro: {error.digest}
+        </p>
+      ) : null}
+
       {emDesenvolvimento ? (
         <div className="mt-8 rounded-xl border border-amber-300 bg-amber-50 p-4">
           <p className="text-sm font-semibold text-amber-900">
