@@ -30,7 +30,25 @@ if (existsSync('.env.local')) {
     const m = linha.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*)$/);
     if (m) process.env[m[1]] ??= m[2].trim().replace(/^["']|["']$/g, '');
   }
-} else {
+}
+
+// Sem SUPABASE_URL o app sobe em modo demonstração — vale dizer isso antes de
+// listar quatro erros vermelhos para quem só quer olhar as telas.
+if (!process.env.SUPABASE_URL?.trim()) {
+  console.log(`
+${AMARELO}Nenhum banco configurado.${FIM}
+
+  ${VERDE}npm run dev${FIM} já funciona: o app sobe em ${AMARELO}modo demonstração${FIM}, guardando
+  o que você preencher na memória do servidor. Serve para percorrer as telas e
+  avaliar texto, campos e fluxo.
+
+  Para valer — dados que persistem e as travas de LGPD dentro do banco —
+  configure o Supabase seguindo ${CINZA}docs/como-rodar.md${FIM} e rode este comando de novo.
+`);
+  process.exit(0);
+}
+
+if (!existsSync('.env.local')) {
   falha('arquivo .env.local não existe', 'cp .env.example .env.local — depois preencha os valores');
 }
 

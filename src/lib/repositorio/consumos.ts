@@ -1,6 +1,8 @@
 import 'server-only';
 import { supabaseServidor } from '@/lib/supabase/servidor';
 import type { ClasseTarifaria } from '@/lib/dominio';
+import { modoDemo } from '@/lib/demo/modo';
+import { buscarConsumoDemo, salvarConsumoDemo } from '@/lib/demo/armazem';
 
 /**
  * Acesso a dados do consumo energético (tela 3).
@@ -15,6 +17,8 @@ export type EntradaConsumo = {
 };
 
 export async function salvarConsumo(entrada: EntradaConsumo): Promise<void> {
+  if (modoDemo()) return salvarConsumoDemo(entrada);
+
   const { error } = await supabaseServidor().rpc('salvar_consumo_energia', {
     p_lead_id: entrada.leadId,
     p_valor_fatura_reais: entrada.valorFaturaReais,
@@ -35,6 +39,8 @@ export type ConsumoSalvo = {
 
 /** Para reabrir a tela já preenchida quando o produtor volta para corrigir. */
 export async function buscarConsumo(leadId: string): Promise<ConsumoSalvo | null> {
+  if (modoDemo()) return buscarConsumoDemo(leadId);
+
   const { data, error } = await supabaseServidor()
     .from('consumos_energia')
     .select('valor_fatura_reais, consumo_kwh, classe_tarifaria')

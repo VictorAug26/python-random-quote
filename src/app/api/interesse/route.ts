@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { supabaseServidor } from '@/lib/supabase/servidor';
-import { diagnosticoPertenceAoLead } from '@/lib/repositorio/diagnosticos';
+import {
+  diagnosticoPertenceAoLead,
+  FaltaConsentimentoDoParceiro,
+  registrarInteresse,
+} from '@/lib/repositorio/diagnosticos';
 import { hashIp, ipDaRequisicao, userAgentResumido } from '@/lib/privacidade';
-import { TEXTO_CONSENTIMENTO, VERSAO_POLITICA } from '@/lib/consentimento';
 import { lerSessao } from '@/lib/sessao';
 import { respostaDeFalha } from '@/lib/resposta';
 
@@ -49,26 +51,16 @@ export async function POST(requisicao: Request) {
       return NextResponse.json({ erro: 'nao_e_seu_diagnostico' }, { status: 403 });
     }
 
-    const { error } = await supabaseServidor().rpc('registrar_interesse', {
-      p_lead_id: leadId,
-      p_diagnostico_id: dono.diagnosticoId,
-      p_consente_parceiro: consenteParceiro,
-      p_texto_parceiro: TEXTO_CONSENTIMENTO.compartilhamento_parceiro,
-      p_versao_politica: VERSAO_POLITICA,
-      p_ip_hash: hashIp(ipDaRequisicao(requisicao.headers)),
-      p_user_agent: userAgentResumido(requisicao.headers),
+    await registrarInteresse(leadId, dono.diagnosticoId, consenteParceiro, {
+      ipHash: hashIp(ipDaRequisicao(requisicao.headers)),
+      userAgent: userAgentResumido(requisicao.headers),
     });
-
-    if (error) {
-      // A função recusa quando não há autorização de compartilhamento ativa.
-      if (/autoriza/i.test(error.message)) {
-        return NextResponse.json({ erro: 'falta_consentimento' }, { status: 400 });
-      }
-      throw new Error(error.message);
-    }
 
     return NextResponse.json({ ok: true });
   } catch (erro) {
+    if (erro instanceof FaltaConsentimentoDoParceiro) {
+      return NextResponse.json({ erro: 'falta_consentimento' }, { status: 400 });
+    }
     return respostaDeFalha('interesse', erro);
   }
 }

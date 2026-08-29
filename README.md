@@ -23,18 +23,20 @@ quer ser contatado por um parceiro comercial.
 
 ```bash
 npm install
-cp .env.example .env.local   # preencha os valores
-npm run checar               # diz o que ainda falta
 npm run dev
 ```
 
-**Primeira vez?** O passo a passo completo — criar o projeto no Supabase,
-aplicar as migrations, publicar na Vercel para testar no celular — está em
-**[`docs/como-rodar.md`](docs/como-rodar.md)**.
+Sem configuração, o app sobe em **modo demonstração**: mesmas telas, mesmo
+motor, dados na memória do servidor (uma faixa avisa no topo). Serve para
+percorrer o fluxo e avaliar texto, campos e cálculo.
 
-As sete migrations em `supabase/migrations/` devem ser aplicadas na ordem
-numérica (`supabase db push` faz isso). `supabase/seed.sql` tem dados
-fictícios para desenvolvimento; nunca rode em produção.
+Para rodar com banco de verdade — e com as travas de LGPD que vivem dentro do
+Postgres — siga **[`docs/como-rodar.md`](docs/como-rodar.md)**: criar o projeto
+no Supabase, aplicar as sete migrations, publicar na Vercel para testar no
+celular. `npm run checar` diz o que ainda falta.
+
+`supabase/seed.sql` tem dados fictícios para desenvolvimento; nunca rode em
+produção.
 
 ## Verificação
 

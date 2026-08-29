@@ -1,6 +1,8 @@
 import 'server-only';
 import { supabaseServidor } from '@/lib/supabase/servidor';
 import { TEXTO_CONSENTIMENTO, VERSAO_POLITICA } from '@/lib/consentimento';
+import { modoDemo } from '@/lib/demo/modo';
+import { consentimentoAtivoDemo, registrarCadastroDemo } from '@/lib/demo/armazem';
 
 /**
  * Acesso a dados do cadastro (tela 1).
@@ -26,6 +28,8 @@ export async function consentimentoAtivo(
   leadId: string,
   finalidade: 'diagnostico' | 'compartilhamento_parceiro',
 ): Promise<boolean> {
+  if (modoDemo()) return consentimentoAtivoDemo(leadId, finalidade);
+
   const { data, error } = await supabaseServidor()
     .from('consentimentos_atuais')
     .select('concedido')
@@ -38,6 +42,8 @@ export async function consentimentoAtivo(
 }
 
 export async function registrarCadastro(entrada: EntradaCadastro): Promise<string> {
+  if (modoDemo()) return registrarCadastroDemo(entrada);
+
   const { data, error } = await supabaseServidor().rpc('registrar_cadastro', {
     p_nome: entrada.nome,
     p_whatsapp: entrada.whatsapp,

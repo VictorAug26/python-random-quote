@@ -1,6 +1,8 @@
 import 'server-only';
 import { supabaseServidor } from '@/lib/supabase/servidor';
 import type { Atividade, Equipamento } from '@/lib/dominio';
+import { modoDemo } from '@/lib/demo/modo';
+import { buscarPerfilDemo, salvarPerfilDemo } from '@/lib/demo/armazem';
 
 /**
  * Acesso a dados do perfil da atividade (tela 2).
@@ -19,6 +21,8 @@ export type EntradaPerfil = {
 };
 
 export async function salvarPerfil(entrada: EntradaPerfil): Promise<void> {
+  if (modoDemo()) return salvarPerfilDemo(entrada);
+
   const { error } = await supabaseServidor().rpc('salvar_perfil_atividade', {
     p_lead_id: entrada.leadId,
     p_atividades: entrada.atividades,
@@ -43,6 +47,8 @@ export type PerfilSalvo = {
 
 /** Para reabrir a tela já preenchida quando o produtor volta para corrigir. */
 export async function buscarPerfil(leadId: string): Promise<PerfilSalvo | null> {
+  if (modoDemo()) return buscarPerfilDemo(leadId);
+
   const { data, error } = await supabaseServidor()
     .from('perfis_atividade')
     .select('atividades, atividade_outro, equipamentos, possui_solar, possui_bess')

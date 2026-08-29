@@ -1,13 +1,36 @@
 # Como rodar o app
 
-Do zero até clicar nas cinco telas. São uns 15 minutos, quase todos esperando
-o Supabase criar o projeto.
-
-O app precisa de um banco de verdade — as regras de consentimento e retenção
-vivem dentro do Postgres, não no código. Por isso não existe "modo demonstração":
-o que você testaria não seria o app.
+Dois caminhos. Comece pelo primeiro.
 
 ---
+
+## Caminho rápido: só olhar as telas (1 minuto)
+
+```bash
+npm install
+npm run dev
+```
+
+Pronto. Abra <http://localhost:3000>.
+
+Sem banco configurado, o app sobe em **modo demonstração**: uma faixa amarela
+avisa no topo, e o que você preencher fica na memória do servidor — some quando
+ele reinicia. É o app de verdade, com as mesmas telas, a mesma validação e o
+mesmo motor de cálculo. Só o lugar onde os dados são guardados muda.
+
+Serve para o que provavelmente te interessa agora: percorrer o fluxo, achar
+texto que não funciona com produtor, campo que falta, número que parece errado.
+
+**O que o modo demonstração não prova:** as travas que vivem dentro do
+Postgres — gravação bloqueada por consentimento revogado, atomicidade das
+transações, cascata do expurgo, a view sem dado pessoal. O comportamento
+visível é o mesmo; a garantia, não. Para isso, siga abaixo.
+
+---
+
+## Caminho completo: com banco de verdade (15 minutos)
+
+Quase todo o tempo é esperar o Supabase provisionar.
 
 ## 1. Um projeto no Supabase (grátis)
 
@@ -41,7 +64,6 @@ rodando um de cada vez.
 ## 3. Configurar o app
 
 ```bash
-npm install
 cp .env.example .env.local
 ```
 
