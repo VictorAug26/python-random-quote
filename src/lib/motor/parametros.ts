@@ -1,32 +1,25 @@
-import type { Atividade, ClasseTarifaria, Equipamento } from '@/lib/dominio';
+import type { Atividade, Equipamento } from '@/lib/dominio';
 
 /**
- * TODAS as constantes calibráveis do motor moram aqui.
+ * As constantes calibráveis do motor que NÃO vêm da ANEEL moram aqui.
  *
- * ⚠️ Os números abaixo são estimativas iniciais, não medições. Precisam ser
- * calibrados com 3–5 faturas reais da região e com a tabela de preço do
- * parceiro integrador antes de o resultado ser mostrado a produtor de
- * verdade. Nenhuma lógica de cálculo depende dos valores — trocar aqui é
- * suficiente.
+ * Preço de energia (tarifa, delta ponta/fora ponta, demanda) saiu deste
+ * arquivo: agora vem de src/lib/motor/tarifas-cemig.json, gerado a partir do
+ * portal de dados abertos da ANEEL. Ver src/lib/motor/tarifas.ts.
+ *
+ * ⚠️ O que sobrou aqui continua sendo estimativa, não medição — principalmente
+ * a fração deslocável (que precisa de curva de carga real) e o investimento
+ * por kWh (que precisa da tabela do parceiro integrador). Nenhuma lógica de
+ * cálculo depende dos valores: trocar aqui é suficiente.
  *
  * Ao mexer em qualquer número, suba a VERSAO_MOTOR. Ela vai gravada em cada
- * diagnóstico, para que um resultado de seis meses atrás continue explicável.
+ * diagnóstico, para que um resultado de seis meses atrás continue explicável —
+ * inclusive qual resolução homologatória valia na época.
  */
 
-export const VERSAO_MOTOR = 'v1.1.0';
+export const VERSAO_MOTOR = 'v2.0.0';
 
 export const PARAMETROS = {
-  /**
-   * Quanto custa o kWh, com tributos, para estimar o consumo a partir do
-   * valor da fatura quando o produtor não sabe o kWh.
-   */
-  tarifaMediaReaisPorKwh: {
-    convencional: 0.95,
-    branca: 0.92,
-    grupo_a: 0.7,
-    nao_sei: 0.95,
-  } satisfies Record<ClasseTarifaria, number>,
-
   /**
    * Fração do consumo que dá para tirar do horário caro e jogar no barato.
    * É o coração do cálculo: soma de uma base, um ajuste por atividade e o
@@ -56,16 +49,6 @@ export const PARAMETROS = {
     teto: 0.45,
   },
 
-  /** Quanto se ganha por kWh deslocado, conforme a tarifa. */
-  deltaTarifaReaisPorKwh: {
-    branca: 0.45,
-    grupo_a: 0.55,
-    // Sem diferença de preço por horário quase não há o que capturar.
-    convencional: 0.12,
-    // Conservador de propósito: não sabemos em que tarifa a pessoa está.
-    nao_sei: 0.25,
-  } satisfies Record<ClasseTarifaria, number>,
-
   /**
    * Redução de demanda contratada — só existe no Grupo A.
    *
@@ -73,10 +56,12 @@ export const PARAMETROS = {
    * a conta do Grupo A cobra pelo maior pico de kW do mês, e a bateria corta
    * esse pico. Só entra na conta quando o produtor informa a demanda
    * contratada na tela 3.
+   *
+   * O preço do kW saiu daqui — vem da ANEEL, e muda conforme a modalidade
+   * (na Verde a demanda é única; na Azul o que vale é a diferença entre o kW
+   * da ponta e o de fora da ponta).
    */
   demanda: {
-    /** R$ por kW de demanda, por mês. A calibrar com faturas reais. */
-    tarifaReaisPorKwMes: 30,
     /**
      * Quanto do pico dá para cortar na prática. Não é 100%: parte da carga
      * é simultânea e inevitável, e a bateria não pode descarregar o mês todo.

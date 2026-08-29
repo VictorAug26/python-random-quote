@@ -119,9 +119,15 @@ if (problemas === 0) {
     { migration: '0006', tabela: 'diagnosticos_publicos' },
     { migration: '0007', tabela: 'expurgos_lgpd' },
     { migration: '0008', tabela: 'consumos_energia', coluna: 'demanda_contratada_kw' },
+    {
+      migration: '0009',
+      tabela: 'diagnosticos_publicos',
+      coluna: 'economia_se_migrar_para_branca_reais',
+      opcional: 'sem ela o relatório da tarifa convencional só deixa de sugerir a migração',
+    },
   ];
 
-  for (const { migration, tabela, coluna } of ESPERADAS) {
+  for (const { migration, tabela, coluna, opcional } of ESPERADAS) {
     const alvo = coluna ? `${tabela}.${coluna}` : tabela;
     try {
       const resposta = await fetch(
@@ -137,6 +143,14 @@ if (problemas === 0) {
           'confira se copiou a service_role, e não a anon/publishable',
         );
         break;
+      } else if (opcional) {
+        // Migration que o app sabe viver sem: avisa, não reprova. Reprovar
+        // faria o `npm run checar` de quem está só experimentando parecer
+        // quebrado por causa de uma frase a menos no relatório.
+        aviso(
+          `${alvo} não existe — a migration ${migration} não foi aplicada; ${opcional}. ` +
+            `Para aplicar: cole supabase/migrations/${migration}*.sql no SQL Editor.`,
+        );
       } else {
         falha(
           `${alvo} não existe — a migration ${migration} não foi aplicada`,

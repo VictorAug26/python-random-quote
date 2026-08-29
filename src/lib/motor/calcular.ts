@@ -1,4 +1,5 @@
 import { PARAMETROS, VERSAO_MOTOR } from '@/lib/motor/parametros';
+import { TARIFAS_ANEEL, fatorTributosObservado, perfilTarifario } from '@/lib/motor/tarifas';
 import type { Confianca, Diagnostico, EntradasMotor } from '@/lib/motor/tipos';
 
 /**
@@ -14,11 +15,31 @@ import type { Confianca, Diagnostico, EntradasMotor } from '@/lib/motor/tipos';
 export function calcularDiagnostico(entradas: EntradasMotor): Diagnostico {
   const p = PARAMETROS;
 
+  // --- 0. Preço da energia, da ANEEL -----------------------------------------
+  // As tarifas vêm da resolução homologatória vigente da CEMIG-D, não de
+  // estimativa. A modalidade do Grupo A (Verde ou Azul) sai da demanda
+  // contratada, para não obrigar o produtor a responder mais uma pergunta
+  // com jargão que ele não usa.
+  //
+  // Quem informa fatura e kWh calibra os próprios tributos; quem não informa
+  // cai no fator médio de Minas.
+  const tributos = fatorTributosObservado(
+    entradas.valorFaturaReais,
+    entradas.consumoKwh,
+    entradas.classeTarifaria,
+    entradas.demandaContratadaKw ?? null,
+  );
+  const tarifa = perfilTarifario(
+    entradas.classeTarifaria,
+    entradas.demandaContratadaKw ?? null,
+    tributos.fator,
+  );
+
   // --- 1. Consumo mensal em kWh ---------------------------------------------
   const consumoFoiInformado = entradas.consumoKwh !== null && entradas.consumoKwh > 0;
   const consumoKwhUsado = consumoFoiInformado
     ? (entradas.consumoKwh as number)
-    : entradas.valorFaturaReais / p.tarifaMediaReaisPorKwh[entradas.classeTarifaria];
+    : entradas.valorFaturaReais / tarifa.tarifaMediaReaisPorKwh;
 
   // --- 2. Fração do consumo que dá para deslocar ----------------------------
   const somaAtividades = entradas.atividades.reduce(
@@ -35,7 +56,7 @@ export function calcularDiagnostico(entradas: EntradasMotor): Diagnostico {
   );
 
   // --- 3. Diferença de tarifa capturável ------------------------------------
-  const deltaTarifa = p.deltaTarifaReaisPorKwh[entradas.classeTarifaria];
+  const deltaTarifa = tarifa.deltaTarifaReaisPorKwh;
 
   // --- 4. Porte de bateria ---------------------------------------------------
   // O dimensionamento vem ANTES da economia de propósito: quem economiza é a
@@ -44,7 +65,21 @@ export function calcularDiagnostico(entradas: EntradasMotor): Diagnostico {
   // cai junto — senão o relatório prometeria um ganho que o equipamento
   // recomendado não entrega.
   const consumoDiarioKwh = consumoKwhUsado / 30;
-  const energiaDeslocavelPorDia = consumoDiarioKwh * fracaoDeslocavel;
+
+  // Dois limites independentes, e vale o menor:
+  //
+  //   a) que parte da carga tem folga de horário (fração deslocável);
+  //   b) quanta energia a fazenda de fato compra CARO, na ponta.
+  //
+  // (b) é o teto físico. A bateria economiza a diferença de tarifa sobre kWh
+  // que estavam sendo comprados na ponta — tirar do horário barato e devolver
+  // no horário barato não economiza nada. Numa fazenda com muita carga
+  // flexível mas pouco consumo na ponta, é (b) que manda.
+  const energiaNaPontaPorDia = consumoDiarioKwh * tarifa.fracaoConsumoNaPonta;
+  const energiaDeslocavelPorDia = Math.min(
+    consumoDiarioKwh * fracaoDeslocavel,
+    energiaNaPontaPorDia,
+  );
 
   const bessCapacidadeKwh = arredondarParaFaixaComercial(
     energiaDeslocavelPorDia / p.bess.profundidadeDescarga,
@@ -73,7 +108,7 @@ export function calcularDiagnostico(entradas: EntradasMotor): Diagnostico {
         )
       : 0;
 
-  const economiaDemanda = reducaoDemandaKw * p.demanda.tarifaReaisPorKwMes * ajusteBess;
+  const economiaDemanda = reducaoDemandaKw * tarifa.demandaReaisPorKwMes * ajusteBess;
 
   const economiaAntesDoTeto = economiaEnergia + economiaDemanda;
 
@@ -114,6 +149,15 @@ export function calcularDiagnostico(entradas: EntradasMotor): Diagnostico {
     paybackMeses === null ||
     paybackMeses > p.paybackMesesParaAlertar;
 
+  // Na convencional o resultado é sempre R$ 0 — o preço não muda com a hora,
+  // então não existe arbitragem. Dizer só isso deixaria o produtor sem saída.
+  // Rodamos o mesmo cenário na tarifa branca para mostrar o que a migração
+  // destravaria. Só um nível de recursão: a chamada abaixo já é 'branca'.
+  const economiaSeMigrarParaBrancaReais =
+    entradas.classeTarifaria === 'convencional'
+      ? calcularDiagnostico({ ...entradas, classeTarifaria: 'branca' }).economiaMensalReais
+      : null;
+
   return {
     motorVersao: VERSAO_MOTOR,
     economiaMensalReais,
@@ -128,14 +172,19 @@ export function calcularDiagnostico(entradas: EntradasMotor): Diagnostico {
     paybackMeses,
     confianca,
     recomendaRevisarTarifa,
+    economiaSeMigrarParaBrancaReais,
     detalhes: {
       consumoKwhUsado: arredondar(consumoKwhUsado, 2),
       consumoFoiInformado,
       fracaoDeslocavel: arredondar(fracaoDeslocavel, 4),
-      deltaTarifaReaisPorKwh: deltaTarifa,
+      deltaTarifaReaisPorKwh: arredondar(deltaTarifa, 5),
       economiaAntesDoTeto: arredondar(economiaAntesDoTeto, 2),
       limitadoPeloTeto,
       reducaoDemandaKw: arredondar(reducaoDemandaKw, 2),
+      modalidadeTarifaria: tarifa.modalidade,
+      tarifaReh: TARIFAS_ANEEL.reh,
+      fatorTributos: arredondar(tributos.fator, 4),
+      fatorTributosObservado: tributos.observado,
     },
   };
 }

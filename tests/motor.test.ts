@@ -29,10 +29,15 @@ describe('cenário central: fazenda de leite, tarifa branca', () => {
     expect(d.detalhes.fracaoDeslocavel).toBeCloseTo(0.38, 4);
   });
 
-  it('chega a uma economia coerente com as constantes', () => {
-    // Deslocável: 8900/30 × 0,38 = 112,7 kWh/dia → bateria de 100 kWh,
-    // que entrega 90 kWh/dia. Economia: 90 × 30 × 0,45 × 0,88 = 1069,20.
-    expect(d.economiaMensalReais).toBeCloseTo(1069.2, 1);
+  it('chega a uma economia coerente com as tarifas da ANEEL', () => {
+    // Carga flexível: 8900/30 × 0,38 = 112,7 kWh/dia.
+    // Mas só 11% do consumo cai na ponta: 296,7 × 0,11 = 32,6 kWh/dia.
+    // Vale o menor — não dá para economizar sobre energia que já era barata.
+    // Bateria: 32,6/0,9 = 36,3 → faixa comercial de 30 kWh, que entrega 27.
+    // Fatura ÷ kWh = R$ 0,9438; tarifa nua da ANEEL = R$ 0,9173 → 1,0289 de
+    // tributos, medido na conta do próprio produtor.
+    // Economia: 27 × 30 × (1,06751 × 1,0289) × 0,88 = 782,93.
+    expect(d.economiaMensalReais).toBeCloseTo(782.93, 1);
     expect(d.detalhes.limitadoPeloTeto).toBe(false);
   });
 
@@ -100,8 +105,11 @@ describe('quando falta informação', () => {
   it('estima o consumo pela fatura quando o kWh não vem', () => {
     const d = calcularDiagnostico({ ...LEITEIRA, consumoKwh: null });
     expect(d.detalhes.consumoFoiInformado).toBe(false);
-    // 8400 / 0,92 (tarifa branca) ≈ 9130 kWh
-    expect(d.detalhes.consumoKwhUsado).toBeCloseTo(8400 / 0.92, 0);
+    // Sem o kWh não dá para medir os tributos do produtor: entra o fator médio
+    // de Minas (1/0,77). Tarifa branca média da ANEEL R$ 0,9173 × 1,2987 =
+    // R$ 1,1913/kWh → 8400 / 1,1913 ≈ 7051 kWh.
+    expect(d.detalhes.consumoKwhUsado).toBeCloseTo(7051, 0);
+    expect(d.detalhes.fatorTributosObservado).toBe(false);
     expect(d.confianca).toBe('media');
   });
 
@@ -139,30 +147,49 @@ describe('o que o produtor já tem instalado', () => {
 
 describe('honestidade do resultado', () => {
   /**
-   * Com as constantes de hoje, o retorno depende só de duas delas:
+   * O retorno, quando a bateria comporta tudo que dá para deslocar, depende
+   * só de duas constantes:
    *
    *   payback (meses) = investimentoPorKwh / (deltaTarifa × eficiência × 30)
    *
-   * Não depende do tamanho da fazenda. Em R$ 3.200/kWh e R$ 0,45/kWh de
-   * diferença tarifária, dá 269 meses — mais de 22 anos. Este teste existe
-   * para que a conta fique visível, e para avisar quando a calibração real
-   * mudar esse quadro.
+   * Não depende do tamanho da fazenda. Este teste deixa a conta visível e
+   * avisa quando a tarifa da ANEEL ou o preço do parceiro mudarem o quadro.
    */
   it('deixa explícito o retorno que as constantes de hoje produzem', () => {
     const d = calcularDiagnostico(LEITEIRA);
     const esperado =
       PARAMETROS.investimentoReaisPorKwh /
-      (PARAMETROS.deltaTarifaReaisPorKwh.branca * PARAMETROS.eficienciaBateria * 30);
+      (d.detalhes.deltaTarifaReaisPorKwh * PARAMETROS.eficienciaBateria * 30);
 
-    expect(esperado).toBeCloseTo(269, 0);
-    // O retorno real é pior ainda: a bateria comercial escolhida é maior que
-    // a energia que a fazenda consegue deslocar todo dia.
+    // Com a REH vigente, a branca dá menos de 10 anos — bem longe dos 22 anos
+    // que as estimativas iniciais produziam.
+    expect(esperado).toBeLessThan(120);
+    // O retorno real é pior que a fórmula: a bateria comercial escolhida é
+    // maior que a energia que a fazenda consegue deslocar todo dia.
     expect(d.paybackMeses as number).toBeGreaterThanOrEqual(Math.round(esperado));
   });
 
-  it('em tarifa convencional, sugere rever a tarifa antes de comprar bateria', () => {
+  it('em tarifa convencional não há o que a bateria capture', () => {
     const d = calcularDiagnostico({ ...LEITEIRA, classeTarifaria: 'convencional' });
+
+    // A convencional cobra o mesmo preço a qualquer hora: deslocar consumo
+    // não economiza nada. Prometer economia aqui seria mentira.
+    expect(d.detalhes.deltaTarifaReaisPorKwh).toBe(0);
+    expect(d.economiaMensalReais).toBe(0);
+    expect(d.paybackMeses).toBeNull();
     expect(d.recomendaRevisarTarifa).toBe(true);
+  });
+
+  it('e mostra quanto a migração para a branca destravaria', () => {
+    const d = calcularDiagnostico({ ...LEITEIRA, classeTarifaria: 'convencional' });
+    const branca = calcularDiagnostico({ ...LEITEIRA, classeTarifaria: 'branca' });
+
+    expect(d.economiaSeMigrarParaBrancaReais).toBe(branca.economiaMensalReais);
+    expect(d.economiaSeMigrarParaBrancaReais as number).toBeGreaterThan(0);
+  });
+
+  it('fora da convencional não sugere migração que não faz sentido', () => {
+    expect(calcularDiagnostico(LEITEIRA).economiaSeMigrarParaBrancaReais).toBeNull();
   });
 
   it('sugere rever a tarifa quando o retorno passa de 10 anos', () => {

@@ -44,6 +44,7 @@ export async function registrarDiagnostico(
       recomendaRevisarTarifa: diagnostico.recomendaRevisarTarifa,
       economiaEnergiaReais: diagnostico.economiaEnergiaReais,
       economiaDemandaReais: diagnostico.economiaDemandaReais,
+      economiaSeMigrarParaBrancaReais: diagnostico.economiaSeMigrarParaBrancaReais,
     },
   });
 
@@ -85,6 +86,13 @@ export async function buscarDiagnosticoPublico(
     paybackMeses: data.payback_meses === null ? null : Number(data.payback_meses),
     confianca: data.confianca as Confianca,
     recomendaRevisarTarifa: Boolean(data.recomenda_revisar_tarifa),
+    // `undefined` quando a migration 0009 ainda não foi aplicada; `null`
+    // sempre que a tarifa não é a convencional. Nos dois casos o relatório
+    // omite a frase da migração, em vez de quebrar.
+    economiaSeMigrarParaBrancaReais:
+      data.economia_se_migrar_para_branca_reais == null
+        ? null
+        : Number(data.economia_se_migrar_para_branca_reais),
   };
 }
 

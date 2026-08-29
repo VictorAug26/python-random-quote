@@ -48,19 +48,33 @@ export function textoRetorno(diagnostico: DiagnosticoExibivel): string {
   return `Um sistema desse porte custa por volta de ${investimento} instalado, e se pagaria em cerca de ${anos} anos.`;
 }
 
-/** Aparece quando comprar bateria não é o primeiro passo mais sensato. */
+/**
+ * Aparece quando a bateria funciona, mas demora demais para se pagar.
+ *
+ * O outro caso — tarifa sem diferença de horário, em que a bateria não
+ * economiza nada — não passa por aqui: ele troca o relatório inteiro pelo
+ * CardTarifaPlana, porque ali o assunto deixa de ser o porte da bateria.
+ */
 export function alertaRevisarTarifa(diagnostico: DiagnosticoExibivel): string | null {
   if (!diagnostico.recomendaRevisarTarifa) return null;
+  if (diagnostico.paybackMeses === null) return null;
 
-  if (diagnostico.paybackMeses !== null && diagnostico.paybackMeses > 120) {
-    return 'Pelo seu perfil de consumo, a bateria demoraria muito para se pagar. Vale conversar antes sobre a sua tarifa e sobre energia solar — pode render mais, com menos investimento.';
-  }
-
-  return 'Na sua tarifa, a energia custa o mesmo a qualquer hora, e é daí que a bateria tira a maior parte da economia. Antes de investir, vale avaliar uma mudança de tarifa: só isso já pode reduzir a conta.';
+  return 'Pelo seu perfil de consumo, a bateria demoraria muito para se pagar. Vale conversar antes sobre a sua tarifa e sobre energia solar — pode render mais, com menos investimento.';
 }
 
 /** Mensagem pré-formatada do botão de compartilhar. Sem dado pessoal. */
 export function mensagemWhatsapp(diagnostico: DiagnosticoExibivel, endereco: string): string {
+  // Na tarifa convencional a economia é R$ 0, e mandar "economizo R$ 0 com
+  // uma bateria de 15 kWh" para o vizinho não diz nada. O achado ali é outro.
+  if (diagnostico.economiaMensalReais <= 0) {
+    return [
+      `Fiz um diagnóstico de energia da minha propriedade.`,
+      `Deu que a minha tarifa cobra o mesmo preço a qualquer hora, então bateria ainda não compensa — o primeiro passo é rever a tarifa.`,
+      ``,
+      `Veja o resultado: ${endereco}`,
+    ].join('\n');
+  }
+
   const valor = formatarMoeda(diagnostico.economiaMensalReais);
   return [
     `Fiz um diagnóstico de energia da minha propriedade.`,

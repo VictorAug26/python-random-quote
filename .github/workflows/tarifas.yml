@@ -1,0 +1,106 @@
+# Tarifas da ANEEL — verificação semanal
+#
+# Busca as tarifas vigentes da CEMIG-D no portal de dados abertos da ANEEL e,
+# se mudaram, abre um pull request com o novo arquivo.
+#
+# NÃO atualiza produção sozinho, de propósito. Estes números viram promessa de
+# economia no relatório do produtor: mudança em número assim passa por gente.
+# O PR existe para alguém olhar o diff e decidir.
+#
+# O reajuste anual da CEMIG costuma sair em maio. Rodar toda segunda garante
+# que a gente descubra em até uma semana, sem depender de ninguém lembrar.
+
+name: Tarifas ANEEL
+
+on:
+  schedule:
+    # Segunda-feira, 09:00 UTC (06:00 em Brasília).
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Buscar tarifas vigentes na ANEEL
+        run: node scripts/atualizar-tarifas.mjs
+
+      - name: Conferir se mudou
+        id: diff
+        run: |
+          if git diff --quiet -- src/lib/motor/tarifas-cemig.json; then
+            echo "mudou=nao" >> "$GITHUB_OUTPUT"
+            echo "Tarifas inalteradas."
+          else
+            echo "mudou=sim" >> "$GITHUB_OUTPUT"
+            {
+              echo 'reh<<FIM'
+              node -p "require('./src/lib/motor/tarifas-cemig.json').reh"
+              echo 'FIM'
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+      # Os testes de número fixo (tests/motor.test.ts) falham quando a tarifa
+      # muda — é o portão de revisão funcionando, não um defeito. O resultado
+      # entra no corpo do PR para quem for revisar já saber o que esperar.
+      - name: Rodar os testes com as tarifas novas
+        if: steps.diff.outputs.mudou == 'sim'
+        id: testes
+        continue-on-error: true
+        run: |
+          npm ci
+          npm test 2>&1 | tail -40 > /tmp/saida-testes.txt
+          cat /tmp/saida-testes.txt
+
+      - name: Abrir pull request
+        if: steps.diff.outputs.mudou == 'sim'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REH: ${{ steps.diff.outputs.reh }}
+          RESULTADO_TESTES: ${{ steps.testes.outcome }}
+        run: |
+          BRANCH="tarifas/$(date +%Y-%m-%d)"
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add src/lib/motor/tarifas-cemig.json
+          git commit -m "Tarifas da ANEEL: $REH"
+          git push -u origin "$BRANCH"
+
+          {
+            echo "A ANEEL publicou tarifas novas para a CEMIG-D."
+            echo
+            echo "**Resolução:** $REH"
+            echo
+            echo "## O que revisar antes de aprovar"
+            echo
+            echo "- [ ] O diff do JSON bate com a resolução publicada pela ANEEL"
+            echo "- [ ] A variação da economia estimada faz sentido"
+            echo "- [ ] \`VERSAO_MOTOR\` em \`src/lib/motor/parametros.ts\` foi incrementada"
+            echo "- [ ] Os números fixos de \`tests/motor.test.ts\` foram conferidos e atualizados"
+            echo
+            echo "Os testes com valor fixo **devem** falhar aqui: eles existem para"
+            echo "obrigar alguém a olhar o quanto a economia prometida ao produtor mudou."
+            echo "Resultado desta execução: \`$RESULTADO_TESTES\`."
+            echo
+            echo '```'
+            cat /tmp/saida-testes.txt 2>/dev/null || echo "(sem saída)"
+            echo '```'
+          } > /tmp/corpo-pr.md
+
+          gh pr create \
+            --title "Tarifas da ANEEL: $REH" \
+            --body-file /tmp/corpo-pr.md \
+            --base master \
+            --head "$BRANCH"

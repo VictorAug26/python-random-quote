@@ -4,10 +4,13 @@ import { notFound } from 'next/navigation';
 import { buscarDiagnosticoPublico, diagnosticoPertenceAoLead } from '@/lib/repositorio/diagnosticos';
 import { consentimentoAtivo } from '@/lib/repositorio/leads';
 import { mensagemWhatsapp } from '@/lib/motor/mensagens';
+import { fonteTarifaria } from '@/lib/motor/tarifas';
+import { formatarDataBr } from '@/lib/formatacao';
 import { envOpcional } from '@/lib/config';
 import { lerSessao } from '@/lib/sessao';
 import { CardEconomia, TextoEconomia } from '@/components/relatorio/CardEconomia';
 import { CardBateria } from '@/components/relatorio/CardBateria';
+import { CardTarifaPlana } from '@/components/relatorio/CardTarifaPlana';
 import { AcoesRelatorio } from '@/components/relatorio/AcoesRelatorio';
 
 export const dynamic = 'force-dynamic';
@@ -45,14 +48,26 @@ export default async function PaginaRelatorio({
     dono && leadId ? await consentimentoAtivo(leadId, 'compartilhamento_parceiro') : false;
 
   const endereco = `${envOpcional('NEXT_PUBLIC_SITE_URL', 'http://localhost:3000')}/relatorio/${token}`;
+  const fonte = fonteTarifaria();
 
   return (
     <div className="space-y-6">
       <p className="text-sm font-medium text-emerald-800">Diagnóstico pronto</p>
 
-      <CardEconomia diagnostico={diagnostico} />
-      <TextoEconomia diagnostico={diagnostico} />
-      <CardBateria diagnostico={diagnostico} />
+      {/*
+        Economia zerada só acontece na tarifa convencional, onde não existe
+        diferença de preço por horário. Ali o relatório inteiro muda de
+        assunto: o achado é a tarifa, não o porte da bateria.
+      */}
+      {diagnostico.economiaMensalReais > 0 ? (
+        <>
+          <CardEconomia diagnostico={diagnostico} />
+          <TextoEconomia diagnostico={diagnostico} />
+          <CardBateria diagnostico={diagnostico} />
+        </>
+      ) : (
+        <CardTarifaPlana diagnostico={diagnostico} />
+      )}
 
       {dono ? (
         <AcoesRelatorio
@@ -74,9 +89,19 @@ export default async function PaginaRelatorio({
         </section>
       )}
 
+      {/*
+        De onde saiu o preço da energia. Não é detalhe burocrático: é o que
+        permite o produtor — ou o contador dele — conferir a conta em vez de
+        ter que acreditar. As tarifas são públicas.
+      */}
       <p className="text-sm leading-relaxed text-stone-500">
         Esta é uma estimativa a partir do que você respondeu, para dar uma ordem de grandeza.
         O número exato depende da sua fatura e de uma visita técnica.
+      </p>
+
+      <p className="text-sm leading-relaxed text-stone-500">
+        O preço da energia usado na conta é o da {fonte.rehCurta} da ANEEL, em vigor para
+        a CEMIG até {formatarDataBr(fonte.vigenciaFim)}. É tabela pública — dá para conferir.
       </p>
     </div>
   );

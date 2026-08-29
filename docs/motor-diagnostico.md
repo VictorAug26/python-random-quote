@@ -5,10 +5,67 @@ envia a tela 3. É um **motor de regras**, não modelo estatístico — com os d
 que temos (uma fatura e alguns checkboxes), regra bem calibrada ganha de
 qualquer coisa mais sofisticada.
 
-> ⚠️ **Todas as constantes abaixo são estimativas iniciais.** Precisam ser
-> calibradas com 3–5 faturas reais da região e com a tabela de preços do
-> parceiro integrador antes de mostrar número para produtor. Elas ficam todas
-> em `src/lib/motor/parametros.ts`, num objeto só, versionado.
+> **O preço da energia não é mais estimativa.** Tarifa, diferença
+> ponta/fora-ponta e preço da demanda vêm da resolução homologatória vigente da
+> CEMIG-D, publicada pela ANEEL em dados abertos. Ficam em
+> `src/lib/motor/tarifas-cemig.json`, gerado por `npm run tarifas`, e são lidas
+> por `src/lib/motor/tarifas.ts`.
+>
+> ⚠️ **O resto continua estimativa**, e precisa de calibração com faturas reais
+> e com a tabela de preços do parceiro integrador antes de virar número mostrado
+> a produtor — principalmente a **fração deslocável** (passo 2), o **perfil de
+> consumo por posto** (passo 3) e o **investimento por kWh** (passo 6). Ficam em
+> `src/lib/motor/parametros.ts`, num objeto só, versionado.
+
+## De onde vem o preço da energia
+
+O portal de dados abertos da ANEEL publica as tarifas de aplicação de todas as
+distribuidoras do país, regeradas diariamente. `scripts/atualizar-tarifas.mjs`
+busca as linhas da CEMIG-D e grava um JSON commitado.
+
+Não é consulta em tempo real, e isso é decisão de projeto:
+
+1. **Reprodutibilidade.** O relatório é um link compartilhável. Se o produtor
+   voltar em março, os números têm que ser os mesmos, e explicáveis por uma
+   resolução específica — que fica gravada com o diagnóstico.
+2. **Disponibilidade.** O portal cair não pode derrubar o diagnóstico.
+3. **Revisão.** Número que muda sozinho em produção não passa por ninguém.
+   Tarifa errada vira promessa errada de economia.
+
+O workflow `.github/workflows/tarifas.yml` roda toda segunda, e quando a ANEEL
+reajusta ele **abre um pull request** em vez de aplicar. Os testes de número
+fixo em `tests/motor.test.ts` falham de propósito nesse PR: é o portão que
+obriga alguém a olhar o quanto a economia prometida mudou.
+
+Qual linha da ANEEL vale para cada produtor está em `perfilTarifario()`:
+
+| Resposta na tela 3 | Linha da ANEEL |
+| --- | --- |
+| Convencional | B2 Rural Convencional |
+| Tarifa branca | B2 Rural Branca |
+| Grupo A, demanda < 300 kW | A4 Verde |
+| Grupo A, demanda ≥ 300 kW | A4 Azul |
+| Não sei | B2 Rural Branca, com o ganho cortado pela metade |
+
+A modalidade do Grupo A sai da demanda contratada em vez de virar pergunta:
+acima de 300 kW a distribuidora exige a Azul. Perguntar "azul ou verde?" seria
+jargão que o produtor não usa.
+
+O filtro que isola o consumidor cativo comum é `DscDetalhe = "Não se aplica"`.
+As outras opções (`SCEE`, para quem já tem geração própria; `APE`, autoprodutor)
+têm TE bem menor e dariam um número plausível e errado.
+
+### Tributos
+
+As tarifas da ANEEL são **sem tributos e sem bandeira**; a conta que chega é
+maior. O motor aplica um fator, e prefere medir a estimar:
+
+- **Produtor informou fatura e kWh:** o fator sai da divisão —
+  `(fatura / kWh) / tarifaDaAneel`. É o único ponto do motor que se calibra com
+  dado do próprio produtor. Fora da faixa 1,0–1,8 é descartado, porque quase
+  sempre é erro de digitação.
+- **Não informou:** 1/(1 − 0,23), de PIS/COFINS (~5%) e ICMS (18% em MG desde a
+  LC 194/2022). É limite superior: produtor rural tem isenções em alguns casos.
 
 ---
 
@@ -23,6 +80,7 @@ qualquer coisa mais sofisticada.
   valorFaturaReais: number
   consumoKwh?: number
   classeTarifaria: 'branca' | 'convencional' | 'grupo_a' | 'nao_sei'
+  demandaContratadaKw?: number   // só no Grupo A, e opcional mesmo lá
 }
 ```
 
@@ -34,12 +92,8 @@ Se o produtor informou `consumoKwh`, usa. Senão, estima pela fatura:
 consumoKwh = valorFaturaReais / tarifaMediaEstimada[classeTarifaria]
 ```
 
-| Classe | R$/kWh (com tributos) |
-| --- | --- |
-| convencional | 0,95 |
-| branca | 0,92 |
-| grupo_a | 0,70 |
-| nao_sei | 0,95 |
+A tarifa média sai da ANEEL, ponderada pelos postos tarifários e multiplicada
+pelo fator de tributos acima. Ver `perfilTarifario().tarifaMediaReaisPorKwh`.
 
 ## Passo 2 — fração do consumo que dá para deslocar
 
@@ -60,14 +114,49 @@ alguma folga de horário — exatamente o que bateria aproveita.
 
 ## Passo 3 — diferença de tarifa capturável
 
-Quanto se ganha por kWh deslocado:
+Quanto se ganha por kWh deslocado: `tarifaPonta − tarifaForaPonta`, das duas
+linhas da ANEEL, vezes o fator de tributos.
 
-| Classe | R$/kWh economizado | Observação para o relatório |
-| --- | --- | --- |
-| branca | 0,45 | cenário típico do MVP |
-| grupo_a | 0,55 | ponta × fora ponta pesa mais |
-| convencional | 0,12 | sem diferença de horário; vale sugerir avaliar mudança de tarifa |
-| nao_sei | 0,25 | conservador de propósito |
+Com a REH 3.589 (vigente até 27/05/2027), sem tributos:
+
+| Modalidade | Ponta | Fora ponta | Diferença |
+| --- | --- | --- | --- |
+| B2 Rural Branca | 1,83628 | 0,76877 | **1,06751** |
+| A4 Verde | 2,38718 | 0,48077 | **1,90641** |
+| A4 Azul | 0,66001 | 0,48077 | **0,17924** |
+| B2 Rural Convencional | — | — | **0** |
+
+Três coisas que só ficaram visíveis com o número real:
+
+- **A convencional não tem ponta.** A diferença é exatamente zero, não 0,12: a
+  bateria não economiza nada ali. O relatório dessa classe muda de assunto e
+  passa a falar de migração de tarifa (`CardTarifaPlana`).
+- **Verde e Azul são opostas.** A Verde ganha deslocando energia; a Azul ganha
+  cortando demanda (R$ 71,13/kW na ponta contra R$ 23,77 fora dela). Tratar
+  "Grupo A" como um número só estava errado.
+- **As estimativas antigas erravam por 3 a 4 vezes** para baixo na branca e na
+  Verde, e por mais de 2 vezes para cima na Azul.
+
+### Teto físico: só dá para economizar sobre o que era caro
+
+A bateria economiza a diferença de tarifa sobre kWh que **estavam sendo
+comprados na ponta**. Tirar carga do horário barato e devolver no horário
+barato não economiza nada.
+
+```
+energiaNaPonta    = consumoDiario × fracaoConsumoNaPonta
+energiaDeslocavel = min(consumoDiario × fracaoDeslocavel, energiaNaPonta)
+```
+
+O perfil de consumo por posto (`PERFIL_CONSUMO`) hoje é 11% na ponta e 7% no
+intermediário na branca, 13% na ponta no Grupo A. Em horas puras a ponta daria
+~9% do mês; numa fazenda de leite a ordenha da tarde costuma cair dentro dela,
+então o peso real tende a ser maior. **É um dos números que mais precisa de
+fatura real.**
+
+Sem esse limite o motor prometia economia sobre energia que nunca passou pelo
+horário caro. Com a diferença de R$ 0,12 que se estimava antes, o erro passava
+despercebido; com R$ 1,07 real, ele dominava o resultado.
 
 ## Passo 4 — porte de bateria
 
@@ -159,40 +248,47 @@ médio prazo — e evita lead queimado com o parceiro.
 
 ---
 
-## ⚠️ Achado de calibração: o retorno não fecha com os números de hoje
+## Retorno, com as tarifas reais da ANEEL
 
-Rodando o motor, o payback cai entre **20 e 25 anos** nos melhores cenários.
-Não é bug: é o que estas constantes produzem. A conta se reduz a duas delas, e
-**não depende do tamanho da fazenda**:
+A troca das tarifas estimadas pelas da REH 3.589 mudou o quadro. Antes, com
+`deltaTarifa = 0,45` chutado, o payback dava 22 anos em todo cenário. Agora:
 
-```
-paybackMeses ≈ investimentoPorKwh / (deltaTarifa × 0,88 × 30)
-             ≈ 3.200 / (0,45 × 0,88 × 30)
-             ≈ 269 meses  (22 anos)
-```
+| Cenário (fatura R$ 8.400, 8.900 kWh) | Economia/mês | Bateria | Payback |
+| --- | --- | --- | --- |
+| Grupo A Verde, 150 kW | R$ 2.940 | 50 kWh | **4,5 anos** |
+| Tarifa branca | R$ 783 | 30 kWh | **10,3 anos** |
+| Grupo A Azul, 500 kW | R$ 1.264 | 50 kWh | **10,6 anos** |
+| Não sei a tarifa | R$ 391 | 30 kWh | 20,4 anos |
+| Convencional | R$ 0 | — | não se paga |
 
-Para o retorno cair para 10 anos seria preciso **uma** destas coisas:
+Pivô central em Grupo A Verde (fatura R$ 25.000): R$ 6.086/mês, **4,4 anos**.
 
-| Alavanca | Hoje | Necessário para 120 meses |
-| --- | --- | --- |
-| Investimento por kWh instalado | R$ 3.200 | ≤ R$ 1.425 |
-| Diferença tarifária capturada | R$ 0,45/kWh | ≥ R$ 1,01/kWh |
+Duas leituras:
 
-Três leituras possíveis, e é decisão de negócio qual vale:
+- **O Grupo A Verde fecha a conta** mesmo com o investimento por kWh ainda
+  chutado. É o perfil que o produto deveria priorizar comercialmente.
+- **A branca fica no limite.** 10,3 anos contra uma vida útil de ~15 anos é
+  retorno real mas magro, e o relatório aciona o alerta de retorno longo.
 
-1. **As constantes estão pessimistas.** Preço de BESS instalado caiu muito;
-   o número real do parceiro pode ser bem menor que R$ 3.200/kWh.
-2. **Falta a maior fonte de economia do Grupo A: a demanda contratada.**
-   O modelo só captura diferença de preço por horário (energia). Em Grupo A,
-   reduzir o pico de demanda em kW costuma valer mais que o deslocamento de
-   energia — e não está aqui, porque exigiria perguntar a demanda contratada
-   na tela 3.
-3. **Bateria sozinha não se paga mesmo,** e o produto honesto é conduzir para
-   solar + revisão de tarifa, com bateria entrando depois.
+### O que ainda está chutado, e pesa mais
 
-Enquanto isso não for decidido, o relatório mostra os números e o alerta de
-"vale revisar a tarifa antes" — que é o comportamento correto para o que as
-constantes dizem hoje.
+`investimentoReaisPorKwh = 3.200` é **a maior incerteza que restou**, e domina
+o resultado: o payback é proporcional a ele. Preço de BESS instalado caiu muito
+nos últimos anos, e o número do parceiro integrador pode ser bem menor. A 
+R$ 2.000/kWh a branca cairia para ~6,4 anos.
+
+Depois dele, na ordem: o **perfil de consumo por posto** (quanto da energia cai
+de fato na ponta — hoje 11%/13% estimados) e a **fração deslocável**. Os dois
+só saem de fatura real ou de medição na propriedade.
+
+### Limitação conhecida: desconto de irrigação
+
+Produtor rural com irrigação tem direito a desconto na tarifa noturna
+(Convênio ICMS 76/91 e desconto de irrigação da própria ANEEL), tipicamente
+entre 21h30 e 6h. Quem já tem esse desconto tem menos a ganhar com bateria, e o
+motor **não modela isso** — nem a tabela de tarifas de aplicação da ANEEL traz o
+desconto, que é aplicado à parte. Para pivô central, o resultado tende a ser
+otimista.
 
 ## Passo 7 — confiança
 

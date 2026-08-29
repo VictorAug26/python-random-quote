@@ -179,6 +179,7 @@ export function buscarDiagnosticoPublicoDemo(token: string): DiagnosticoExibivel
     paybackMeses: d.paybackMeses,
     confianca: d.confianca,
     recomendaRevisarTarifa: d.recomendaRevisarTarifa,
+    economiaSeMigrarParaBrancaReais: d.economiaSeMigrarParaBrancaReais,
   };
 }
 

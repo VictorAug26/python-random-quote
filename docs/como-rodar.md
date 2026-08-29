@@ -45,7 +45,7 @@ Enquanto ele provisiona, siga para o passo 3.
 **Jeito mais rápido — um arquivo só:**
 
 1. No painel do Supabase, abra **SQL Editor** → **New query**.
-2. Cole o conteúdo de **`supabase/instalar.sql`** (as sete migrations juntas).
+2. Cole o conteúdo de **`supabase/instalar.sql`** (todas as migrations juntas).
 3. **Run**.
 
 Deve terminar com "Success". Se aparecer um aviso sobre `pg_cron`, é esperado —
@@ -188,3 +188,24 @@ Se você puxar mudanças do repositório, **rode `npm run checar` antes de abrir
 app**. Migration nova exige aplicar o SQL no Supabase — o código passa a
 esperar uma tabela ou coluna que o seu banco ainda não tem, e a tela quebra.
 O checador compara os dois e diz qual migration falta.
+
+## Tarifas da ANEEL
+
+O preço da energia não é chute: vem da resolução homologatória vigente da
+CEMIG-D, no portal de dados abertos da ANEEL. Fica em
+`src/lib/motor/tarifas-cemig.json`, commitado no repositório — o app não
+consulta a ANEEL em tempo real.
+
+Para conferir se há reajuste novo:
+
+```
+npm run tarifas
+```
+
+O script busca, valida e reescreve o arquivo. **Revise o diff antes de
+commitar**: estes números viram promessa de economia no relatório do produtor.
+
+Não precisa lembrar de rodar: o workflow `.github/workflows/tarifas.yml` faz
+isso toda segunda e abre um pull request quando a tarifa muda. Nesse PR os
+testes de número fixo falham de propósito — é o portão que obriga alguém a
+olhar quanto a economia estimada mudou antes de aprovar.

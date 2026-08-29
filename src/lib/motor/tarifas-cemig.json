@@ -1,0 +1,35 @@
+{
+  "distribuidora": "CEMIG-D",
+  "reh": "RESOLUÇÃO HOMOLOGATÓRIA Nº 3.589, DE 26 DE MAIO DE 2026",
+  "vigencia": {
+    "inicio": "2026-05-28",
+    "fim": "2027-05-27"
+  },
+  "tarifas": {
+    "b2_rural_convencional": {
+      "unico": 0.90329
+    },
+    "b2_rural_branca": {
+      "fora_ponta": 0.76877,
+      "intermediario": 1.21291,
+      "ponta": 1.83628
+    },
+    "a4_verde": {
+      "fora_ponta": 0.48077,
+      "ponta": 2.38718,
+      "demanda": 23.77
+    },
+    "a4_azul": {
+      "fora_ponta": 0.48077,
+      "ponta": 0.66001,
+      "demanda_fora_ponta": 23.77,
+      "demanda_ponta": 71.13
+    }
+  },
+  "fonte": {
+    "portal": "https://dadosabertos.aneel.gov.br/dataset/tarifas-distribuidoras-energia-eletrica",
+    "resource_id": "fcf2906c-7c32-4b9b-a637-054e7a5234f4",
+    "dataset_gerado_em": "2026-08-29"
+  },
+  "observacao": "Valores em R$/kWh (consumo) e R$/kW por mês (demanda), SEM tributos e SEM bandeira tarifária. O motor aplica o fator de tributos separadamente — ver PARAMETROS.fatorTributos."
+}
