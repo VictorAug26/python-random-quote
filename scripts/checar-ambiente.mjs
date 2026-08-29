@@ -111,21 +111,26 @@ if (problemas === 0) {
   const base = process.env.SUPABASE_URL.replace(/\/$/, '');
   const chave = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  // Uma tabela por migration, para dizer exatamente onde parou.
+  // Um marco por migration, para dizer exatamente onde o banco parou.
+  // Conferir só tabelas não bastava: uma migration que acrescenta COLUNA
+  // passava despercebida, e o app quebrava depois, na tela.
   const ESPERADAS = [
-    ['leads', '0001'],
-    ['diagnosticos_publicos', '0006'],
-    ['expurgos_lgpd', '0007'],
+    { migration: '0001', tabela: 'leads' },
+    { migration: '0006', tabela: 'diagnosticos_publicos' },
+    { migration: '0007', tabela: 'expurgos_lgpd' },
+    { migration: '0008', tabela: 'consumos_energia', coluna: 'demanda_contratada_kw' },
   ];
 
-  for (const [tabela, migration] of ESPERADAS) {
+  for (const { migration, tabela, coluna } of ESPERADAS) {
+    const alvo = coluna ? `${tabela}.${coluna}` : tabela;
     try {
-      const resposta = await fetch(`${base}/rest/v1/${tabela}?select=*&limit=0`, {
-        headers: { apikey: chave, Authorization: `Bearer ${chave}` },
-      });
+      const resposta = await fetch(
+        `${base}/rest/v1/${tabela}?select=${coluna ?? '*'}&limit=0`,
+        { headers: { apikey: chave, Authorization: `Bearer ${chave}` } },
+      );
 
       if (resposta.ok) {
-        ok(`tabela ${tabela} existe (migration ${migration})`);
+        ok(`${alvo} (migration ${migration})`);
       } else if (resposta.status === 401 || resposta.status === 403) {
         falha(
           'o Supabase recusou a chave',
@@ -134,12 +139,15 @@ if (problemas === 0) {
         break;
       } else {
         falha(
-          `${tabela} não encontrada — migration ${migration} não foi aplicada`,
-          'rode as migrations: supabase db push (ou cole os arquivos de supabase/migrations no SQL Editor, em ordem)',
+          `${alvo} não existe — a migration ${migration} não foi aplicada`,
+          `cole supabase/migrations/${migration}*.sql no SQL Editor do Supabase e rode`,
         );
       }
     } catch (erro) {
-      falha(`não consegui falar com o Supabase: ${erro.message}`, 'confira a SUPABASE_URL e sua conexão');
+      falha(
+        `não consegui falar com o Supabase: ${erro.message}`,
+        'confira a SUPABASE_URL e sua conexão',
+      );
       break;
     }
   }

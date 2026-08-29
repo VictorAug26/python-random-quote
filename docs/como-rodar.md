@@ -179,4 +179,12 @@ select public.lgpd_expurgar_expirados();
 | "Variável de ambiente ausente: X" na tela | falta preencher no `.env.local` — rode `npm run checar` |
 | "Não conseguimos salvar agora" | o Supabase recusou; veja o terminal do `npm run dev` |
 | Formulário não reage aos cliques | recarregue; se persistir, veja o console do navegador |
-| Erro de tabela inexistente | alguma migration não foi aplicada — `npm run checar` diz qual |
+| Erro de tabela ou coluna inexistente | alguma migration não foi aplicada — `npm run checar` diz qual |
+| "Algo deu errado aqui" logo depois de uma tela | quase sempre é migration faltando; em desenvolvimento a própria tela mostra o detalhe |
+
+### Depois de atualizar o código
+
+Se você puxar mudanças do repositório, **rode `npm run checar` antes de abrir o
+app**. Migration nova exige aplicar o SQL no Supabase — o código passa a
+esperar uma tabela ou coluna que o seu banco ainda não tem, e a tela quebra.
+O checador compara os dois e diz qual migration falta.
