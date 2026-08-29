@@ -1,0 +1,34 @@
+# dependências
+node_modules/
+.pnp
+.pnp.js
+
+# build
+.next/
+out/
+build/
+dist/
+
+# ambiente — nunca comitar valores reais
+.env
+.env.local
+.env.*.local
+
+# supabase local
+.branches/
+.temp/
+
+# testes e cobertura
+coverage/
+
+# sistema / editores
+.DS_Store
+*.pem
+.vercel
+*.tsbuildinfo
+.idea/
+.vscode/
+
+# python (arquivos legados do repositório)
+__pycache__/
+*.py[cod]

@@ -1,0 +1,31 @@
+@import 'tailwindcss';
+
+/*
+  Paleta enxuta: verde para ação, pedra para texto e fundo.
+  Mobile-first — os tamanhos padrão já são os do celular.
+*/
+@theme {
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  @apply bg-stone-50 text-stone-900 antialiased;
+}
+
+/* Campos de formulário no celular: iOS dá zoom em fonte menor que 16px. */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+/* Foco sempre visível — o produtor pode estar navegando por teclado externo. */
+:focus-visible {
+  @apply outline-2 outline-offset-2 outline-emerald-700;
+}

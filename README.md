@@ -1,17 +1,86 @@
-# Let's Write a Python Quote Bot!
+# Diagnóstico energético para produtores rurais
 
-This repository will get you started with building a quote bot in Python. It's meant to be used along with the [Learning Lab](https://lab.github.com) intro to Python.
+Ferramenta que estima, em 3 telas curtas, quanto uma fazenda pode economizar
+por mês com um sistema de baterias (BESS). Foco inicial: fazendas leiteiras
+estruturadas do Alto Paranaíba e Triângulo Mineiro (MG).
 
-When complete, you'll be able to grab random quotes from the command line, like this:
+O produtor preenche cadastro, perfil da atividade e consumo de energia; recebe
+um relatório com a economia estimada e o porte de bateria indicado; e decide se
+quer ser contatado por um parceiro comercial.
 
-> **$** python get-quote.py
-> 
-> Keep it logically awesome
-> 
-> **$** python get-quote.py
-> 
-> Speak like a human
+## Estado atual
 
-## Start the Tutorial
+| Tela | Situação |
+| --- | --- |
+| 1 — Cadastro rápido | pronta |
+| 2 — Perfil da atividade | pronta |
+| 3 — Consumo energético | pronta |
+| 4 — Motor de diagnóstico | pronto, **com constantes a calibrar** |
+| 5 — Relatório final | pronta |
+| Política de privacidade e canal de exclusão | prontas |
 
-You can find your next step in [this repo's issues](../../issues/)!
+## Rodando localmente
+
+```bash
+npm install
+npm run dev
+```
+
+Sem configuração, o app sobe em **modo demonstração**: mesmas telas, mesmo
+motor, dados na memória do servidor (uma faixa avisa no topo). Serve para
+percorrer o fluxo e avaliar texto, campos e cálculo.
+
+Para rodar com banco de verdade — e com as travas de LGPD que vivem dentro do
+Postgres — siga **[`docs/como-rodar.md`](docs/como-rodar.md)**: criar o projeto
+no Supabase, aplicar as sete migrations, publicar na Vercel para testar no
+celular. `npm run checar` diz o que ainda falta.
+
+`supabase/seed.sql` tem dados fictícios para desenvolvimento; nunca rode em
+produção.
+
+## Verificação
+
+```bash
+npm run checar     # confere ambiente, chaves e migrations
+npm run test       # testes unitários (motor, telefone, sessão, as 3 telas)
+npm run typecheck
+npm run build
+```
+
+## Antes do primeiro deploy
+
+- [ ] Preencher `[DEFINIR]` na política de privacidade: nome do controlador e
+      do parceiro integrador
+- [ ] Definir o `WHATSAPP_CONTATO` de atendimento de dados pessoais
+- [ ] **Calibrar as constantes do motor** — hoje o retorno dá 20–25 anos.
+      Ver o achado em `docs/motor-diagnostico.md`
+- [ ] Configurar as variáveis de ambiente na Vercel
+- [ ] Habilitar a extensão `pg_cron` no Supabase antes de rodar a migration
+      0007 — sem ela o expurgo não é agendado (a migration avisa em vez de
+      falhar)
+
+## ⚠️ Antes de mostrar isto a um produtor
+
+O motor roda com constantes estimadas, não medidas. Com elas, o retorno do
+investimento em bateria dá **entre 20 e 25 anos** nos melhores cenários — e o
+relatório, corretamente, sugere revisar a tarifa antes de comprar. Isso pode
+significar que as constantes estão pessimistas, que falta modelar a redução de
+demanda contratada do Grupo A, ou que bateria sozinha não se paga mesmo. A
+conta e as três leituras estão em
+[`docs/motor-diagnostico.md`](docs/motor-diagnostico.md#-achado-de-calibração-o-retorno-não-fecha-com-os-números-de-hoje).
+
+## Documentação
+
+- [`docs/como-rodar.md`](docs/como-rodar.md) — do zero até clicar nas telas
+- [`docs/arquitetura.md`](docs/arquitetura.md) — stack, estrutura, fluxo entre telas
+- [`docs/lgpd.md`](docs/lgpd.md) — dados coletados, consentimento, retenção
+- [`docs/motor-diagnostico.md`](docs/motor-diagnostico.md) — regras e constantes do motor
+
+## Duas regras que não se negociam
+
+1. **Chave nenhuma no código.** Tudo por variável de ambiente. A service role
+   do Supabase só existe no servidor — não há chave anônima neste projeto,
+   porque o navegador não fala com o banco.
+2. **Consentimento não vem pré-marcado.** As duas autorizações são separadas e
+   independentes, e ficam registradas com a versão da política e o texto exato
+   que o produtor leu.
