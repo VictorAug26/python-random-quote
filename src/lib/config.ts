@@ -6,11 +6,27 @@
  * quebre a requisição com mensagem clara, e não o build inteiro.
  */
 
+/** Distinguível das demais falhas: em desenvolvimento, vai para a tela. */
+export class ErroDeConfiguracao extends Error {
+  constructor(mensagem: string) {
+    super(mensagem);
+    this.name = 'ErroDeConfiguracao';
+  }
+}
+
+/** As que o app não roda sem. Usadas pelo `npm run checar`. */
+export const VARIAVEIS_OBRIGATORIAS = [
+  'SUPABASE_URL',
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'SESSAO_SECRET',
+  'IP_HASH_PEPPER',
+] as const;
+
 export function envObrigatoria(nome: string): string {
   const valor = process.env[nome];
   if (!valor || valor.trim() === '') {
-    throw new Error(
-      `Variável de ambiente ausente: ${nome}. Veja .env.example e configure antes de subir.`,
+    throw new ErroDeConfiguracao(
+      `Variável de ambiente ausente: ${nome}. Rode "npm run checar" para ver tudo o que falta.`,
     );
   }
   return valor;

@@ -6,6 +6,7 @@ import { registrarDiagnostico } from '@/lib/repositorio/diagnosticos';
 import { calcularDiagnostico } from '@/lib/motor/calcular';
 import type { EntradasMotor } from '@/lib/motor/tipos';
 import { lerSessao } from '@/lib/sessao';
+import { respostaDeFalha } from '@/lib/resposta';
 
 /**
  * TELA 3 — consumo energético, e TELA 4 — o motor.
@@ -65,7 +66,6 @@ export async function POST(requisicao: Request) {
 
     return NextResponse.json({ ok: true, proximaEtapa: `/relatorio/${token}` });
   } catch (erro) {
-    console.error('[consumo] falha ao salvar ou calcular', erro);
-    return NextResponse.json({ erro: 'falha_interna' }, { status: 500 });
+    return respostaDeFalha('consumo', erro);
   }
 }

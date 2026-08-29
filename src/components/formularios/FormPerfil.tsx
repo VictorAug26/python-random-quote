@@ -76,6 +76,7 @@ export function FormPerfil({ iniciais }: { iniciais: ValoresPerfil }) {
 
       const falha = (await resposta.json().catch(() => ({}))) as {
         erro?: string;
+        detalhe?: string;
         campos?: Record<string, string>;
         proximaEtapa?: string;
       };
@@ -88,7 +89,8 @@ export function FormPerfil({ iniciais }: { iniciais: ValoresPerfil }) {
 
       setErros(
         falha.campos ?? {
-          formulario: 'Não conseguimos salvar agora. Tente de novo em instantes.',
+          // detalhe só vem em desenvolvimento, quando falta configuração.
+          formulario: falha.detalhe ?? 'Não conseguimos salvar agora. Tente de novo em instantes.',
         },
       );
       setEnviando(false);

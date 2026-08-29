@@ -5,6 +5,7 @@ import { diagnosticoPertenceAoLead } from '@/lib/repositorio/diagnosticos';
 import { hashIp, ipDaRequisicao, userAgentResumido } from '@/lib/privacidade';
 import { TEXTO_CONSENTIMENTO, VERSAO_POLITICA } from '@/lib/consentimento';
 import { lerSessao } from '@/lib/sessao';
+import { respostaDeFalha } from '@/lib/resposta';
 
 const esquema = z.object({
   token: z.string().uuid(),
@@ -68,7 +69,6 @@ export async function POST(requisicao: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (erro) {
-    console.error('[interesse] falha ao registrar', erro);
-    return NextResponse.json({ erro: 'falha_interna' }, { status: 500 });
+    return respostaDeFalha('interesse', erro);
   }
 }

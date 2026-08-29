@@ -24,27 +24,22 @@ quer ser contatado por um parceiro comercial.
 ```bash
 npm install
 cp .env.example .env.local   # preencha os valores
+npm run checar               # diz o que ainda falta
 npm run dev
 ```
 
-Aplique as migrations no seu projeto Supabase, em ordem:
+**Primeira vez?** O passo a passo completo — criar o projeto no Supabase,
+aplicar as migrations, publicar na Vercel para testar no celular — está em
+**[`docs/como-rodar.md`](docs/como-rodar.md)**.
 
-```
-supabase/migrations/0001_schema_inicial.sql
-supabase/migrations/0002_rls_e_retencao.sql
-supabase/migrations/0003_registrar_cadastro.sql
-supabase/migrations/0004_salvar_perfil.sql
-supabase/migrations/0005_salvar_consumo.sql
-supabase/migrations/0006_diagnostico_e_interesse.sql
-supabase/migrations/0007_expurgo_agendado.sql
-```
-
-`supabase/seed.sql` tem dados fictícios para desenvolvimento. Nunca rode em
-produção.
+As sete migrations em `supabase/migrations/` devem ser aplicadas na ordem
+numérica (`supabase db push` faz isso). `supabase/seed.sql` tem dados
+fictícios para desenvolvimento; nunca rode em produção.
 
 ## Verificação
 
 ```bash
+npm run checar     # confere ambiente, chaves e migrations
 npm run test       # testes unitários (motor, telefone, sessão, as 3 telas)
 npm run typecheck
 npm run build
@@ -74,6 +69,7 @@ conta e as três leituras estão em
 
 ## Documentação
 
+- [`docs/como-rodar.md`](docs/como-rodar.md) — do zero até clicar nas telas
 - [`docs/arquitetura.md`](docs/arquitetura.md) — stack, estrutura, fluxo entre telas
 - [`docs/lgpd.md`](docs/lgpd.md) — dados coletados, consentimento, retenção
 - [`docs/motor-diagnostico.md`](docs/motor-diagnostico.md) — regras e constantes do motor

@@ -71,6 +71,7 @@ export function FormConsumo({ iniciais }: { iniciais: ValoresConsumo }) {
 
       const falha = (await resposta.json().catch(() => ({}))) as {
         campos?: Record<string, string>;
+        detalhe?: string;
         proximaEtapa?: string;
       };
 
@@ -81,7 +82,8 @@ export function FormConsumo({ iniciais }: { iniciais: ValoresConsumo }) {
 
       setErros(
         falha.campos ?? {
-          formulario: 'Não conseguimos salvar agora. Tente de novo em instantes.',
+          // detalhe só vem em desenvolvimento, quando falta configuração.
+          formulario: falha.detalhe ?? 'Não conseguimos salvar agora. Tente de novo em instantes.',
         },
       );
       setEnviando(false);

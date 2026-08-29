@@ -3,6 +3,7 @@ import { esquemaCadastro, errosPorCampo } from '@/lib/validacao/schemas';
 import { registrarCadastro } from '@/lib/repositorio/leads';
 import { hashIp, ipDaRequisicao, userAgentResumido } from '@/lib/privacidade';
 import { definirSessao } from '@/lib/sessao';
+import { respostaDeFalha } from '@/lib/resposta';
 
 /**
  * TELA 1 — cadastro rápido.
@@ -46,9 +47,6 @@ export async function POST(requisicao: Request) {
 
     return NextResponse.json({ ok: true, proximaEtapa: '/perfil' }, { status: 201 });
   } catch (erro) {
-    // O detalhe vai para o log do servidor; o produtor recebe uma mensagem
-    // que dá para entender. Nada de dado pessoal na resposta de erro.
-    console.error('[cadastro] falha ao registrar', erro);
-    return NextResponse.json({ erro: 'falha_interna' }, { status: 500 });
+    return respostaDeFalha('cadastro', erro);
   }
 }

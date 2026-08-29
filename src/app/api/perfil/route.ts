@@ -3,6 +3,7 @@ import { esquemaPerfil, errosPorCampo } from '@/lib/validacao/schemas';
 import { salvarPerfil } from '@/lib/repositorio/perfis';
 import { instalacaoParaBooleanos } from '@/lib/dominio';
 import { lerSessao } from '@/lib/sessao';
+import { respostaDeFalha } from '@/lib/resposta';
 
 /**
  * TELA 2 — perfil da atividade.
@@ -47,7 +48,6 @@ export async function POST(requisicao: Request) {
 
     return NextResponse.json({ ok: true, proximaEtapa: '/consumo' });
   } catch (erro) {
-    console.error('[perfil] falha ao salvar', erro);
-    return NextResponse.json({ erro: 'falha_interna' }, { status: 500 });
+    return respostaDeFalha('perfil', erro);
   }
 }

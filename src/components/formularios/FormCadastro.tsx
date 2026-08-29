@@ -68,12 +68,14 @@ export function FormCadastro({ origem }: { origem?: string | undefined }) {
 
       const falha = (await resposta.json().catch(() => ({}))) as {
         erro?: string;
+        detalhe?: string;
         campos?: Record<string, string>;
       };
 
       setErros(
         falha.campos ?? {
-          formulario: 'Não conseguimos salvar seus dados agora. Tente de novo em instantes.',
+          // detalhe só vem em desenvolvimento, quando falta configuração.
+          formulario: falha.detalhe ?? 'Não conseguimos salvar seus dados agora. Tente de novo em instantes.',
         },
       );
       setEnviando(false);
