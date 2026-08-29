@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "checar": "node scripts/checar-ambiente.mjs",
+    "sql": "node scripts/gerar-sql-unico.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

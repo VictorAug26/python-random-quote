@@ -40,12 +40,26 @@ Quase todo o tempo é esperar o Supabase provisionar.
 
 Enquanto ele provisiona, siga para o passo 3.
 
-## 2. Aplicar as migrations
+## 2. Aplicar o schema
 
-As sete migrations em `supabase/migrations/` criam tabelas, regras e o
-agendamento do expurgo. Duas formas:
+**Jeito mais rápido — um arquivo só:**
 
-**Com o CLI do Supabase** (recomendado — aplica todas na ordem certa):
+1. No painel do Supabase, abra **SQL Editor** → **New query**.
+2. Cole o conteúdo de **`supabase/instalar.sql`** (as sete migrations juntas).
+3. **Run**.
+
+Deve terminar com "Success". Se aparecer um aviso sobre `pg_cron`, é esperado —
+veja abaixo.
+
+> Rode **uma vez só**. Migrations são de execução única: a segunda tentativa dá
+> `relation "leads" already exists`. Para recomeçar do zero (apaga tudo):
+> ```sql
+> drop schema public cascade;
+> create schema public;
+> grant usage on schema public to postgres, service_role;
+> ```
+
+**Alternativa, com o CLI:**
 
 ```bash
 npm install -g supabase
@@ -53,13 +67,15 @@ supabase link --project-ref SEU_REF   # o ref está na URL do painel
 supabase db push
 ```
 
-**Ou pelo painel**, se preferir não instalar nada: abra o **SQL Editor** e cole
-o conteúdo de cada arquivo de `supabase/migrations/`, **na ordem numérica**,
-rodando um de cada vez.
+### Sobre o expurgo automático
 
-> **Antes de rodar a 0007**, habilite a extensão `pg_cron` em
-> **Database → Extensions**. É ela que faz o expurgo diário acontecer. Sem ela
-> a migration avisa e segue — o app funciona, mas a retenção não roda sozinha.
+A última migration agenda a limpeza diária dos dados vencidos, e para isso
+precisa da extensão `pg_cron`. Se ela não estiver habilitada, a migration
+**avisa e segue** — o app funciona igual, só a retenção não roda sozinha.
+
+Para habilitar: **Database → Extensions**, procure `pg_cron`, ligue, e rode de
+novo só a parte final de `instalar.sql` (o bloco `do $agendamento$`). Dá para
+deixar isso para depois: não atrapalha o teste.
 
 ## 3. Configurar o app
 
