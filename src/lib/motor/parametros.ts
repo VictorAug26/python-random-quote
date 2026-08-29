@@ -13,7 +13,7 @@ import type { Atividade, ClasseTarifaria, Equipamento } from '@/lib/dominio';
  * diagnóstico, para que um resultado de seis meses atrás continue explicável.
  */
 
-export const VERSAO_MOTOR = 'v1.0.0';
+export const VERSAO_MOTOR = 'v1.1.0';
 
 export const PARAMETROS = {
   /**
@@ -65,6 +65,24 @@ export const PARAMETROS = {
     // Conservador de propósito: não sabemos em que tarifa a pessoa está.
     nao_sei: 0.25,
   } satisfies Record<ClasseTarifaria, number>,
+
+  /**
+   * Redução de demanda contratada — só existe no Grupo A.
+   *
+   * É a segunda fonte de economia, e costuma valer mais que deslocar energia:
+   * a conta do Grupo A cobra pelo maior pico de kW do mês, e a bateria corta
+   * esse pico. Só entra na conta quando o produtor informa a demanda
+   * contratada na tela 3.
+   */
+  demanda: {
+    /** R$ por kW de demanda, por mês. A calibrar com faturas reais. */
+    tarifaReaisPorKwMes: 30,
+    /**
+     * Quanto do pico dá para cortar na prática. Não é 100%: parte da carga
+     * é simultânea e inevitável, e a bateria não pode descarregar o mês todo.
+     */
+    fracaoMaximaRedutivel: 0.3,
+  },
 
   /** Perda de ida e volta da bateria (carrega e descarrega). */
   eficienciaBateria: 0.88,

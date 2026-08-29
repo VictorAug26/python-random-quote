@@ -119,6 +119,18 @@ export const esquemaConsumo = z.object({
   classeTarifaria: z.enum(VALORES_CLASSE_TARIFARIA, {
     error: 'Escolha uma opção. Se não souber, marque "Não sei".',
   }),
+
+  /**
+   * Demanda contratada, em kW. Só faz sentido no Grupo A, e mesmo lá é
+   * opcional — quem não souber segue sem, e o motor ignora essa parcela.
+   */
+  demandaContratadaKw: z
+    .union([z.literal(''), z.string()])
+    .optional()
+    .transform((texto) => (texto && texto.trim() !== '' ? parsearNumeroBR(texto) : null))
+    .refine((valor) => valor === null || (valor > 0 && valor <= 100000), {
+      error: 'Demanda inválida. Escreva só o número em kW, como 150.',
+    }),
 });
 
 export type DadosConsumo = z.infer<typeof esquemaConsumo>;

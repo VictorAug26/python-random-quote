@@ -73,3 +73,14 @@ export function mensagemWhatsapp(diagnostico: DiagnosticoExibivel, endereco: str
 function formatarPotencia(kw: number): string {
   return `${kw.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} kW`;
 }
+
+/**
+ * Quando parte da economia vem de cortar o pico de demanda, vale dizer —
+ * é uma economia de natureza diferente, e o produtor do Grupo A reconhece
+ * esse item na fatura dele.
+ */
+export function detalheDaEconomia(diagnostico: DiagnosticoExibivel): string | null {
+  if (diagnostico.economiaDemandaReais <= 0) return null;
+
+  return `Desse total, ${formatarMoeda(diagnostico.economiaEnergiaReais)} vêm de usar energia no horário mais barato, e ${formatarMoeda(diagnostico.economiaDemandaReais)} de reduzir a demanda contratada — aquele valor em kW que aparece na sua conta.`;
+}

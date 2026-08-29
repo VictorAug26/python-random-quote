@@ -58,12 +58,34 @@ export function calcularDiagnostico(entradas: EntradasMotor): Diagnostico {
   const ajusteSolar = entradas.possuiSolar ? p.ajusteSolar : 1;
   const ajusteBess = entradas.possuiBess ? p.ajusteBessExistente : 1;
 
-  const economiaAntesDoTeto =
+  const economiaEnergia =
     energiaDeslocadaPorDia * 30 * deltaTarifa * p.eficienciaBateria * ajusteSolar * ajusteBess;
+
+  // --- 5b. Economia de demanda contratada (só Grupo A) -----------------------
+  // A conta do Grupo A cobra pelo maior pico de kW do mês. A bateria corta
+  // esse pico até o limite da própria potência — e só até a parte do pico que
+  // é de fato redutível, porque parte da carga é simultânea e inevitável.
+  const reducaoDemandaKw =
+    entradas.classeTarifaria === 'grupo_a' && entradas.demandaContratadaKw
+      ? Math.min(
+          bessPotenciaKw,
+          entradas.demandaContratadaKw * p.demanda.fracaoMaximaRedutivel,
+        )
+      : 0;
+
+  const economiaDemanda = reducaoDemandaKw * p.demanda.tarifaReaisPorKwMes * ajusteBess;
+
+  const economiaAntesDoTeto = economiaEnergia + economiaDemanda;
 
   const teto = entradas.valorFaturaReais * p.tetoEconomiaSobreFatura;
   const limitadoPeloTeto = economiaAntesDoTeto > teto;
   const economiaMensalReais = arredondar(Math.min(economiaAntesDoTeto, teto), 2);
+
+  // Quando o teto corta, as duas partes encolhem na mesma proporção — senão a
+  // soma exibida no relatório não bateria com o total.
+  const proporcao = economiaAntesDoTeto > 0 ? economiaMensalReais / economiaAntesDoTeto : 0;
+  const economiaEnergiaReais = arredondar(economiaEnergia * proporcao, 2);
+  const economiaDemandaReais = arredondar(economiaDemanda * proporcao, 2);
 
   const economiaMinReais = arredondar(economiaMensalReais * (1 - p.margemFaixa), 2);
   const economiaMaxReais = arredondar(economiaMensalReais * (1 + p.margemFaixa), 2);
@@ -95,6 +117,8 @@ export function calcularDiagnostico(entradas: EntradasMotor): Diagnostico {
   return {
     motorVersao: VERSAO_MOTOR,
     economiaMensalReais,
+    economiaEnergiaReais,
+    economiaDemandaReais,
     economiaMinReais,
     economiaMaxReais,
     economiaPercentual,
@@ -111,6 +135,7 @@ export function calcularDiagnostico(entradas: EntradasMotor): Diagnostico {
       deltaTarifaReaisPorKwh: deltaTarifa,
       economiaAntesDoTeto: arredondar(economiaAntesDoTeto, 2),
       limitadoPeloTeto,
+      reducaoDemandaKw: arredondar(reducaoDemandaKw, 2),
     },
   };
 }

@@ -14,6 +14,7 @@ export type EntradaConsumo = {
   valorFaturaReais: number;
   consumoKwh: number | null;
   classeTarifaria: ClasseTarifaria;
+  demandaContratadaKw: number | null;
 };
 
 export async function salvarConsumo(entrada: EntradaConsumo): Promise<void> {
@@ -24,6 +25,7 @@ export async function salvarConsumo(entrada: EntradaConsumo): Promise<void> {
     p_valor_fatura_reais: entrada.valorFaturaReais,
     p_classe_tarifaria: entrada.classeTarifaria,
     p_consumo_kwh: entrada.consumoKwh,
+    p_demanda_contratada_kw: entrada.demandaContratadaKw,
   });
 
   if (error) {
@@ -35,6 +37,7 @@ export type ConsumoSalvo = {
   valorFaturaReais: number;
   consumoKwh: number | null;
   classeTarifaria: ClasseTarifaria;
+  demandaContratadaKw: number | null;
 };
 
 /** Para reabrir a tela já preenchida quando o produtor volta para corrigir. */
@@ -43,7 +46,7 @@ export async function buscarConsumo(leadId: string): Promise<ConsumoSalvo | null
 
   const { data, error } = await supabaseServidor()
     .from('consumos_energia')
-    .select('valor_fatura_reais, consumo_kwh, classe_tarifaria')
+    .select('valor_fatura_reais, consumo_kwh, classe_tarifaria, demanda_contratada_kw')
     .eq('lead_id', leadId)
     .maybeSingle();
 
@@ -56,5 +59,7 @@ export async function buscarConsumo(leadId: string): Promise<ConsumoSalvo | null
     valorFaturaReais: Number(data.valor_fatura_reais),
     consumoKwh: data.consumo_kwh === null ? null : Number(data.consumo_kwh),
     classeTarifaria: data.classe_tarifaria as ClasseTarifaria,
+    demandaContratadaKw:
+      data.demanda_contratada_kw === null ? null : Number(data.demanda_contratada_kw),
   };
 }

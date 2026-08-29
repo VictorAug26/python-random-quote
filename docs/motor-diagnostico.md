@@ -91,19 +91,56 @@ Se o porte comercial escolhido não comporta tudo o que daria para deslocar, a
 economia cai junto — senão o relatório prometeria um ganho que o equipamento
 recomendado não entrega.
 
+## Passo 4b — redução de demanda contratada (só Grupo A)
+
+A conta do Grupo A cobra também pelo **maior pico de kW do mês**, e cortar esse
+pico costuma valer mais que deslocar energia. A tela 3 pergunta a demanda
+contratada quando a tarifa é Grupo A — opcional, porque nem todo produtor sabe
+de cabeça.
+
+```
+reducaoKw = min(potenciaBateria, demandaContratada × 0,30)
+economiaDemanda = reducaoKw × R$ 30/kW/mês
+```
+
+| Constante | Valor | Origem |
+| --- | --- | --- |
+| R$ por kW de demanda, por mês | 30 | ⚠️ estimativa, calibrar com fatura real |
+| Fração do pico que dá para cortar | 0,30 | ⚠️ estimativa |
+
+O corte esbarra em dois limites: a **potência da bateria** (não adianta ter
+energia se não entrega kW) e a **parte do pico que é redutível** — parte da
+carga é simultânea e inevitável.
+
+Efeito no cenário de referência (fazenda leiteira, R$ 8.400, Grupo A):
+
+| Demanda contratada | Energia | Demanda | Total | Retorno |
+| --- | --- | --- | --- | --- |
+| não informada | R$ 1.307 | — | R$ 1.307 | 20,4 anos |
+| 50 kW | R$ 1.307 | R$ 450 | R$ 1.757 | 15,2 anos |
+| 150 kW | R$ 1.307 | R$ 999 | R$ 2.306 | **11,6 anos** |
+| 300 kW | R$ 1.307 | R$ 999 | R$ 2.306 | 11,6 anos |
+
+Satura em 150 kW porque a partir daí o gargalo passa a ser a potência da
+bateria (33,3 kW), não o pico disponível para cortar.
+
 ## Passo 5 — economia mensal
 
 ```
-economia = energiaDeslocada
+economiaEnergia = energiaDeslocada
          × 30
          × deltaTarifa
          × 0,88            // eficiência de ida e volta da bateria
          × ajusteSolar     // 1,25 se já tem solar, senão 1,00
          × ajusteBess      // 0,30 se já tem bateria
 
+economia = economiaEnergia + economiaDemanda
 economia = min(economia, valorFaturaReais × 0,35)   // trava de sanidade
 faixa    = economia × 0,75  ..  economia × 1,25
 ```
+
+Quando o teto corta, as duas parcelas encolhem na mesma proporção — senão a
+soma exibida no relatório não bateria com o total.
 
 A trava de 35% existe para o relatório nunca prometer o improvável. Quem já
 tem solar ganha mais com bateria (guarda o excedente em vez de injetar), por

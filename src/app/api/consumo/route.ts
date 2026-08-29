@@ -43,6 +43,7 @@ export async function POST(requisicao: Request) {
       valorFaturaReais: dados.valorFaturaReais,
       consumoKwh: dados.consumoKwh,
       classeTarifaria: dados.classeTarifaria,
+      demandaContratadaKw: dados.demandaContratadaKw,
     });
 
     // Sem o perfil não há o que calcular: falta metade das entradas.
@@ -59,6 +60,9 @@ export async function POST(requisicao: Request) {
       valorFaturaReais: dados.valorFaturaReais,
       consumoKwh: dados.consumoKwh,
       classeTarifaria: dados.classeTarifaria,
+      // Só o Grupo A cobra demanda; nas outras tarifas o motor ignora.
+      demandaContratadaKw:
+        dados.classeTarifaria === 'grupo_a' ? dados.demandaContratadaKw : null,
     };
 
     const diagnostico = calcularDiagnostico(entradas);

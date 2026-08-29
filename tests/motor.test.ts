@@ -13,6 +13,7 @@ const LEITEIRA: EntradasMotor = {
   valorFaturaReais: 8400,
   consumoKwh: 8900,
   classeTarifaria: 'branca',
+  demandaContratadaKw: null,
 };
 
 describe('cenário central: fazenda de leite, tarifa branca', () => {
@@ -232,5 +233,61 @@ describe('texto do relatório', () => {
     expect(msg).toMatch(/R\$/);
     expect(msg).toContain(`${d.bessCapacidadeKwh} kWh`);
     expect(msg).not.toMatch(/jo[aã]o|silva|fazenda boa vista|\(\d{2}\)/i);
+  });
+});
+
+describe('demanda contratada (Grupo A)', () => {
+  const GRUPO_A: EntradasMotor = { ...LEITEIRA, classeTarifaria: 'grupo_a' };
+
+  it('ignora a demanda fora do Grupo A — lá ela nem é cobrada', () => {
+    const branca = calcularDiagnostico({ ...LEITEIRA, demandaContratadaKw: 150 });
+    expect(branca.economiaDemandaReais).toBe(0);
+    expect(branca.detalhes.reducaoDemandaKw).toBe(0);
+  });
+
+  it('ignora quando o produtor não soube informar', () => {
+    const d = calcularDiagnostico({ ...GRUPO_A, demandaContratadaKw: null });
+    expect(d.economiaDemandaReais).toBe(0);
+  });
+
+  it('corta o pico até o limite da potência da bateria', () => {
+    // Demanda alta: 30% de 500 kW = 150 kW, bem acima da potência da bateria.
+    const d = calcularDiagnostico({ ...GRUPO_A, demandaContratadaKw: 500 });
+    expect(d.detalhes.reducaoDemandaKw).toBe(d.bessPotenciaKw);
+  });
+
+  it('e até o limite do que é redutível, quando a demanda é pequena', () => {
+    // 30% de 50 kW = 15 kW, abaixo da potência da bateria: o gargalo vira o pico.
+    const d = calcularDiagnostico({ ...GRUPO_A, demandaContratadaKw: 50 });
+    expect(d.detalhes.reducaoDemandaKw).toBeCloseTo(15, 2);
+    expect(d.detalhes.reducaoDemandaKw).toBeLessThan(d.bessPotenciaKw);
+  });
+
+  it('informar a demanda melhora bastante o retorno', () => {
+    const sem = calcularDiagnostico(GRUPO_A);
+    const com = calcularDiagnostico({ ...GRUPO_A, demandaContratadaKw: 150 });
+
+    expect(com.economiaMensalReais).toBeGreaterThan(sem.economiaMensalReais);
+    expect(com.paybackMeses as number).toBeLessThan(sem.paybackMeses as number);
+  });
+
+  it('as duas parcelas sempre somam o total exibido', () => {
+    for (const demanda of [null, 50, 150, 500]) {
+      const d = calcularDiagnostico({ ...GRUPO_A, demandaContratadaKw: demanda });
+      expect(d.economiaEnergiaReais + d.economiaDemandaReais).toBeCloseTo(
+        d.economiaMensalReais,
+        1,
+      );
+    }
+  });
+
+  it('a soma continua batendo mesmo quando o teto de 35% corta', () => {
+    const d = calcularDiagnostico({
+      ...GRUPO_A,
+      valorFaturaReais: 1000,
+      demandaContratadaKw: 2000,
+    });
+    expect(d.detalhes.limitadoPeloTeto).toBe(true);
+    expect(d.economiaEnergiaReais + d.economiaDemandaReais).toBeCloseTo(d.economiaMensalReais, 1);
   });
 });

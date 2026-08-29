@@ -42,6 +42,8 @@ export async function registrarDiagnostico(
     p_detalhes: {
       ...diagnostico.detalhes,
       recomendaRevisarTarifa: diagnostico.recomendaRevisarTarifa,
+      economiaEnergiaReais: diagnostico.economiaEnergiaReais,
+      economiaDemandaReais: diagnostico.economiaDemandaReais,
     },
   });
 
@@ -72,6 +74,8 @@ export async function buscarDiagnosticoPublico(
 
   return {
     economiaMensalReais: Number(data.economia_mensal_reais),
+    economiaEnergiaReais: Number(data.economia_energia_reais),
+    economiaDemandaReais: Number(data.economia_demanda_reais),
     economiaMinReais: Number(data.economia_min_reais),
     economiaMaxReais: Number(data.economia_max_reais),
     economiaPercentual: Number(data.economia_percentual),

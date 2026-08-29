@@ -11,6 +11,7 @@ const VAZIO: ValoresConsumo = {
   valorFaturaReais: '',
   consumoKwh: '',
   classeTarifaria: '',
+  demandaContratadaKw: '',
 };
 
 /** TELA 3 — consumo energético. */
@@ -24,6 +25,10 @@ export default async function PaginaConsumo() {
         valorFaturaReais: formatarNumeroBR(salvo.valorFaturaReais, 2),
         consumoKwh: salvo.consumoKwh === null ? '' : formatarNumeroBR(salvo.consumoKwh, 0),
         classeTarifaria: salvo.classeTarifaria,
+        demandaContratadaKw:
+          salvo.demandaContratadaKw === null
+            ? ''
+            : formatarNumeroBR(salvo.demandaContratadaKw, 0),
       }
     : VAZIO;
 

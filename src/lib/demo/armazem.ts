@@ -131,6 +131,7 @@ export function salvarConsumoDemo(entrada: EntradaConsumo): void {
     valorFaturaReais: entrada.valorFaturaReais,
     consumoKwh: entrada.consumoKwh,
     classeTarifaria: entrada.classeTarifaria as ClasseTarifaria,
+    demandaContratadaKw: entrada.demandaContratadaKw,
   });
 
   const lead = leads.get(entrada.leadId);
@@ -167,6 +168,8 @@ export function buscarDiagnosticoPublicoDemo(token: string): DiagnosticoExibivel
   const d = registro.diagnostico;
   return {
     economiaMensalReais: d.economiaMensalReais,
+    economiaEnergiaReais: d.economiaEnergiaReais,
+    economiaDemandaReais: d.economiaDemandaReais,
     economiaMinReais: d.economiaMinReais,
     economiaMaxReais: d.economiaMaxReais,
     economiaPercentual: d.economiaPercentual,

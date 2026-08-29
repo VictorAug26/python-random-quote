@@ -8,6 +8,8 @@ export type EntradasMotor = {
   valorFaturaReais: number;
   consumoKwh: number | null;
   classeTarifaria: ClasseTarifaria;
+  /** Só existe no Grupo A, e mesmo lá é opcional. */
+  demandaContratadaKw: number | null;
 };
 
 export type Confianca = 'baixa' | 'media' | 'alta';
@@ -16,6 +18,10 @@ export type Diagnostico = {
   motorVersao: string;
 
   economiaMensalReais: number;
+  /** Parte da economia que vem de deslocar energia de horário. */
+  economiaEnergiaReais: number;
+  /** Parte que vem de cortar o pico de demanda (só Grupo A). */
+  economiaDemandaReais: number;
   economiaMinReais: number;
   economiaMaxReais: number;
   economiaPercentual: number;
@@ -38,6 +44,8 @@ export type Diagnostico = {
     deltaTarifaReaisPorKwh: number;
     economiaAntesDoTeto: number;
     limitadoPeloTeto: boolean;
+    /** Quantos kW de pico a bateria consegue cortar. */
+    reducaoDemandaKw: number;
   };
 };
 
@@ -48,6 +56,8 @@ export type Diagnostico = {
 export type DiagnosticoExibivel = Pick<
   Diagnostico,
   | 'economiaMensalReais'
+  | 'economiaEnergiaReais'
+  | 'economiaDemandaReais'
   | 'economiaMinReais'
   | 'economiaMaxReais'
   | 'economiaPercentual'

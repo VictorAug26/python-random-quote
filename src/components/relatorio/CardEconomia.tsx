@@ -1,5 +1,5 @@
 import { formatarMoeda } from '@/lib/formatacao';
-import { explicacaoConfianca, frasePrincipal } from '@/lib/motor/mensagens';
+import { detalheDaEconomia, explicacaoConfianca, frasePrincipal } from '@/lib/motor/mensagens';
 import type { DiagnosticoExibivel } from '@/lib/motor/tipos';
 
 /** O número que o produtor abriu a página para ver. */
@@ -24,9 +24,16 @@ export function CardEconomia({ diagnostico }: { diagnostico: DiagnosticoExibivel
 
 /** Repete a frase principal em texto corrido, com a ressalva de confiança. */
 export function TextoEconomia({ diagnostico }: { diagnostico: DiagnosticoExibivel }) {
+  const detalhe = detalheDaEconomia(diagnostico);
+
   return (
     <section>
       <p className="text-lg leading-relaxed text-stone-800">{frasePrincipal(diagnostico)}</p>
+
+      {detalhe ? (
+        <p className="mt-3 leading-relaxed text-stone-700">{detalhe}</p>
+      ) : null}
+
       <p className="mt-2 text-sm leading-relaxed text-stone-500">
         {explicacaoConfianca(diagnostico.confianca)}
       </p>

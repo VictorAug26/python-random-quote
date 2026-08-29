@@ -15,6 +15,7 @@ export type ValoresConsumo = {
   valorFaturaReais: string;
   consumoKwh: string;
   classeTarifaria: ClasseTarifaria | '';
+  demandaContratadaKw: string;
 };
 
 export function FormConsumo({ iniciais }: { iniciais: ValoresConsumo }) {
@@ -25,6 +26,11 @@ export function FormConsumo({ iniciais }: { iniciais: ValoresConsumo }) {
   const [classeTarifaria, setClasseTarifaria] = useState<ClasseTarifaria | ''>(
     iniciais.classeTarifaria,
   );
+  const [demandaContratada, setDemandaContratada] = useState(iniciais.demandaContratadaKw);
+
+  // A demanda só é cobrada no Grupo A — perguntar nas outras tarifas seria
+  // um campo a mais sem uso nenhum.
+  const cobraDemanda = classeTarifaria === 'grupo_a';
 
   const { erros, setErros, limpar } = useErros();
   const [enviando, setEnviando] = useState(false);
@@ -43,6 +49,7 @@ export function FormConsumo({ iniciais }: { iniciais: ValoresConsumo }) {
       valorFaturaReais: valorFatura,
       consumoKwh,
       classeTarifaria,
+      ...(cobraDemanda ? { demandaContratadaKw: demandaContratada } : {}),
     };
 
     const local = esquemaConsumo.safeParse(bruto);
@@ -152,6 +159,28 @@ export function FormConsumo({ iniciais }: { iniciais: ValoresConsumo }) {
             descricao={opcao.descricao}
           />
         ))}
+
+        {cobraDemanda ? (
+          <div className="pt-2">
+            <Campo
+              id="demandaContratadaKw"
+              rotulo="Demanda contratada (opcional)"
+              ajuda="Vem na fatura em kW. É o que mais pesa na conta de quem é Grupo A — com esse número, a estimativa fica bem mais próxima."
+              prefixo="kW"
+              type="text"
+              inputMode="decimal"
+              enterKeyHint="done"
+              placeholder="150"
+              value={demandaContratada}
+              onChange={(e) => {
+                setDemandaContratada(limparEntradaNumerica(e.target.value));
+                limpar('demandaContratadaKw');
+              }}
+              onBlur={() => setDemandaContratada((atual) => formatarAoSair(atual, 0))}
+              erro={erros.demandaContratadaKw}
+            />
+          </div>
+        ) : null}
       </Grupo>
 
       {erros.formulario ? (
